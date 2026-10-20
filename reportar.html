@@ -76,7 +76,7 @@ async function enviarReporte(files,token){
   for(const f of files){
    const fd=new FormData();fd.append('token',j.autorizacion_evidencias.token);fd.append('archivo',f,f.name);
    try{
-    const u=await fetch('https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/subir-evidencia-bache',{method:'POST',body:fd});
+    const u=await fetch('https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/subir-evidencias-bache',{method:'POST',body:fd});
     const uj=await u.json().catch(()=>({}));if(!u.ok)throw Error(uj.error||'Error al subir fotografía');
    }catch(err){errores.push(f.name+': '+err.message);}
   }
