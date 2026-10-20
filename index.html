@@ -1,6 +1,11 @@
 <!DOCTYPE html>
-
-<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>CazaBachesMX | Mapa ciudadano</title><link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/><style>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CazaBachesMX | Mapa ciudadano</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+<style>
 /* Navegación horizontal CazaBachesMX */
 .cb-header{background:#103b43;color:#fff;min-height:76px;display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1150px)/2));box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
 .cb-brand{color:#fff!important;text-decoration:none!important;font-weight:800;font-size:21px}
@@ -11,7 +16,8 @@
 .cb-home .hero{margin-bottom:0!important}
 .cb-home main{padding-top:30px!important}
 @media(max-width:620px){.cb-header{padding:0 18px}.cb-nav{display:grid;grid-template-columns:1fr;gap:8px}.cb-nav a{width:100%}}
-</style><style>
+</style>
+<style>
 :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#18383b;background:#f3f7f6}
 *{box-sizing:border-box}body{margin:0}main{max-width:1150px;margin:0 auto;padding:30px 20px 65px}
 .hero p:first-child{font-size:13px;letter-spacing:.07em;margin:0 0 15px}
@@ -22,12 +28,38 @@
 #homeMap{width:100%;height:min(64vh,620px);min-height:420px;border-radius:12px;background:#e5eeeb;overflow:hidden}
 .bx-notice{color:#607578;font-size:13px;line-height:1.5}
 @media(max-width:620px){main{padding:22px 14px 45px}#homeMap{height:55vh;min-height:340px}.bx-mapbox{padding:12px}}
-</style><link href="style.css" rel="stylesheet"/><link rel="stylesheet" href="premium.css"/></head><body class="bx-home cb-home"><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa, ubica los puntos que necesitan atención y ayuda a hacer visibles nuestras calles.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus" role="status" aria-live="polite">Cargando reportes públicos…</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script>
+</style>
+<link href="style.css" rel="stylesheet"/>
+<link rel="stylesheet" href="premium.css"/>
+<style>
+/* Ajustes del detalle público: ninguna foto se recorta y el popup no desborda el mapa. */
+#homeMap .maplibregl-popup{max-width:min(340px,calc(100% - 26px))!important}
+#homeMap .maplibregl-popup-content{border-radius:13px;padding:12px;box-sizing:border-box;max-height: min(290px,55vh);overflow-y:auto;overscroll-behavior:contain}
+#homeMap .cb-detalle{color:#18383b;font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;overflow-wrap:anywhere}
+#homeMap .cb-detalle strong{display:block;margin:0 20px 8px 0}
+#homeMap .cb-gravedad{font-weight:700;margin:0 0 8px;color:#116c61}
+#homeMap .cb-descripcion{margin:0 0 10px;line-height:1.4}
+#homeMap .cb-foto-enlace{display:block;margin:9px 0 0;text-align:center}
+#homeMap .cb-foto{display:block;width:100%;height:auto;max-height:175px;object-fit:contain;background:#eef4f1;border:1px solid #dce7e3;border-radius:8px}
+#homeMap .cb-foto-ayuda{display:block;margin:5px 0 0;color:#597376;font-size:12px;text-align:center}
+@media(max-width:620px){#homeMap .maplibregl-popup-content{max-height: min(220px,55vh)}}
+</style>
+</head>
+<body class="bx-home cb-home">
+<header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header>
+<main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa, ubica los puntos que necesitan atención y ayuda a hacer visibles nuestras calles.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus" role="status" aria-live="polite">Cargando reportes públicos…</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
 (() => {
   'use strict';
   const estado = document.getElementById('homeStatus');
   const punto = [-96.9102, 19.5438];
   const endpoint = 'https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/listar-baches-publicos';
+  const labels = {
+    leve: 'Tuerce pies (Leve)',
+    moderado: 'Tumba bicis (Moderado)',
+    grave: 'Cambia pieles (Grave)'
+  };
 
   if (!window.maplibregl) {
     estado.textContent = 'No se pudo cargar la biblioteca del mapa.';
@@ -48,38 +80,44 @@
     return;
   }
 
-  // Los popups se construyen con nodos DOM para no interpretar HTML de terceros.
+  // Todos los textos se agregan como texto, sin ejecutar HTML del ciudadano.
   function crearDetalle(reporte) {
     const contenedor = document.createElement('div');
-    contenedor.style.cssText = 'max-width:260px;color:#18383b;font:14px system-ui,sans-serif;overflow-wrap:anywhere';
+    contenedor.className = 'cb-detalle';
     const titulo = document.createElement('strong');
     titulo.textContent = reporte.folio || 'Bache reportado';
-    titulo.style.cssText = 'display:block;margin-bottom:8px';
     contenedor.append(titulo);
 
     const gravedad = document.createElement('div');
-    gravedad.textContent = 'Gravedad: ' + (reporte.gravedad || 'No especificada');
-    gravedad.style.marginBottom = '7px';
+    gravedad.className = 'cb-gravedad';
+    const valor = String(reporte.gravedad || '').toLowerCase();
+    gravedad.textContent = 'Gravedad: ' + (labels[valor] || 'No especificada');
     contenedor.append(gravedad);
 
     const descripcion = document.createElement('p');
+    descripcion.className = 'cb-descripcion';
     descripcion.textContent = reporte.descripcion || 'Sin descripción';
-    descripcion.style.cssText = 'margin:0 0 9px;line-height:1.4';
     contenedor.append(descripcion);
 
     if (Array.isArray(reporte.fotografias)) {
       for (const foto of reporte.fotografias.slice(0, 3)) {
         if (typeof foto !== 'string' || !foto.startsWith('https://joyfxdjdzjcfbcgjnjsn.supabase.co/storage/v1/object/public/baches-publicos/')) continue;
         const enlace = document.createElement('a');
+        enlace.className = 'cb-foto-enlace';
         enlace.href = foto;
         enlace.target = '_blank';
         enlace.rel = 'noopener noreferrer';
+        enlace.setAttribute('aria-label', 'Abrir fotografía completa en una pestaña nueva');
         const imagen = document.createElement('img');
+        imagen.className = 'cb-foto';
         imagen.src = foto;
-        imagen.alt = 'Fotografía del bache';
+        imagen.alt = 'Fotografía del bache sin recortar';
         imagen.loading = 'lazy';
-        imagen.style.cssText = 'width:100%;max-height:145px;object-fit:cover;border-radius:8px;margin-top:5px';
         enlace.append(imagen);
+        const ayuda = document.createElement('small');
+        ayuda.className = 'cb-foto-ayuda';
+        ayuda.textContent = 'Haz clic en la imagen para verla completa';
+        enlace.append(ayuda);
         contenedor.append(enlace);
       }
     }
@@ -104,7 +142,7 @@
           reporte.gravedad === 'moderado' ? '#e5a238' : '#14766c';
         new maplibregl.Marker({ color })
           .setLngLat([lng, lat])
-          .setPopup(new maplibregl.Popup({ offset: 20, maxWidth: '300px' })
+          .setPopup(new maplibregl.Popup({ offset: 20, maxWidth: '340px' })
             .setDOMContent(crearDetalle(reporte)))
           .addTo(map);
         limites.extend([lng, lat]);
@@ -124,4 +162,6 @@
     console.warn('Mapa:', error?.error?.message || 'Error de cartografía');
   });
 })();
-</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
+</script>
+<footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer>
+</body></html>
