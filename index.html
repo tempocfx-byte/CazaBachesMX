@@ -32,22 +32,38 @@
 <link href="style.css" rel="stylesheet"/>
 <link rel="stylesheet" href="premium.css"/>
 <style>
-/* Ajustes del detalle público: ninguna foto se recorta y el popup no desborda el mapa. */
-#homeMap .maplibregl-popup{max-width:min(340px,calc(100% - 26px))!important}
-#homeMap .maplibregl-popup-content{border-radius:13px;padding:12px;box-sizing:border-box;max-height: min(290px,55vh);overflow-y:auto;overscroll-behavior:contain}
-#homeMap .cb-detalle{color:#18383b;font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;overflow-wrap:anywhere}
-#homeMap .cb-detalle strong{display:block;margin:0 20px 8px 0}
-#homeMap .cb-gravedad{font-weight:700;margin:0 0 8px;color:#116c61}
-#homeMap .cb-descripcion{margin:0 0 10px;line-height:1.4}
-#homeMap .cb-foto-enlace{display:block;margin:9px 0 0;text-align:center}
-#homeMap .cb-foto{display:block;width:100%;height:auto;max-height:175px;object-fit:contain;background:#eef4f1;border:1px solid #dce7e3;border-radius:8px}
-#homeMap .cb-foto-ayuda{display:block;margin:5px 0 0;color:#597376;font-size:12px;text-align:center}
-@media(max-width:620px){#homeMap .maplibregl-popup-content{max-height: min(220px,55vh)}}
+/* Detalle fuera del mapa, sin recortes por los bordes de MapLibre. */
+.cb-report-dialog{border:0;border-radius:22px;padding:0;width:min(900px,calc(100% - 28px));max-width:900px;max-height:calc(100dvh - 28px);box-shadow:0 24px 90px #081e2590;color:#18383b;background:#fff;overflow:hidden}
+.cb-report-dialog::backdrop{background:rgba(8,30,37,.72)}
+.cb-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 24px;border-bottom:1px solid #dce7e3}
+.cb-dialog-head h2{font:800 clamp(17px,2.5vw,22px)/1.25 system-ui,sans-serif;margin:0;overflow-wrap:anywhere}
+.cb-dialog-close{flex:none;display:grid;place-items:center;width:40px;height:40px;background:#ecf3ef;color:#173a3d;border:0;border-radius:50%;font-size:25px;font-weight:700;cursor:pointer}
+.cb-dialog-close:hover,.cb-dialog-close:focus-visible{background:#d5ebe1;outline:2px solid #14766c}
+.cb-dialog-body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(220px,.8fr);gap:24px;padding:22px 24px 26px;max-height:calc(100dvh - 115px);overflow-y:auto;overscroll-behavior:contain}
+.cb-dialog-photos{display:flex;flex-direction:column;gap:14px;min-width:0}
+.cb-photo-frame{margin:0;padding:12px;background:#edf4f0;border:1px solid #dce7e3;border-radius:14px;text-align:center}
+.cb-photo-full{display:block;width:100%;height:auto;max-height:min(60dvh,540px);object-fit:contain;margin:auto;border-radius:8px}
+.cb-photo-frame figcaption{margin-top:10px;font-size:13px;color:#536d70}
+.cb-photo-frame a{color:#0b665e;font-weight:700;text-decoration:underline}
+.cb-report-info{min-width:0;overflow-wrap:anywhere;font:15px/1.55 system-ui,sans-serif}
+.cb-report-info p{margin:0 0 17px}
+.cb-report-info .cb-severity{font-weight:800;color:#116c61;font-size:17px}
+.cb-report-info .cb-legend{font-weight:700;color:#506b6c;margin-bottom:4px}
+.cb-no-photos{padding:24px;text-align:center;color:#607578}
+@media(max-width:650px){.cb-report-dialog{width:calc(100% - 18px);max-height:calc(100dvh - 18px);border-radius:15px}.cb-dialog-head{padding:12px 15px}.cb-dialog-body{grid-template-columns:1fr;padding:15px;gap:12px;max-height:calc(100dvh - 92px)}.cb-photo-full{max-height:48dvh}}
 </style>
 </head>
 <body class="bx-home cb-home">
 <header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header>
 <main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa, ubica los puntos que necesitan atención y ayuda a hacer visibles nuestras calles.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus" role="status" aria-live="polite">Cargando reportes públicos…</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main>
+<dialog id="reportDialog" class="cb-report-dialog" aria-labelledby="dialogTitle">
+  <div class="cb-dialog-head"><h2 id="dialogTitle">Detalle del bache</h2><button id="dialogClose" class="cb-dialog-close" type="button" aria-label="Cerrar detalle">×</button></div>
+  <div class="cb-dialog-body"><div id="dialogPhotos" class="cb-dialog-photos"></div><div class="cb-report-info">
+    <p id="dialogSeverity" class="cb-severity"></p><p class="cb-legend">Ubicación y descripción</p><p id="dialogDescription"></p>
+    <p class="cb-legend">Fecha del reporte</p><p id="dialogDate"></p>
+    <p style="font-size:13px;color:#647c7e">Reporte ciudadano aprobado, sujeto a revisión previa a su publicación.</p>
+  </div></div>
+</dialog>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 (() => {
@@ -80,48 +96,57 @@
     return;
   }
 
-  // Todos los textos se agregan como texto, sin ejecutar HTML del ciudadano.
-  function crearDetalle(reporte) {
-    const contenedor = document.createElement('div');
-    contenedor.className = 'cb-detalle';
-    const titulo = document.createElement('strong');
-    titulo.textContent = reporte.folio || 'Bache reportado';
-    contenedor.append(titulo);
+  // Panel independiente del mapa para evitar recortes. Sin HTML de terceros.
+  const dialog = document.getElementById('reportDialog');
+  const dialogTitle = document.getElementById('dialogTitle');
+  const dialogSeverity = document.getElementById('dialogSeverity');
+  const dialogDescription = document.getElementById('dialogDescription');
+  const dialogDate = document.getElementById('dialogDate');
+  const dialogPhotos = document.getElementById('dialogPhotos');
+  document.getElementById('dialogClose').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 
-    const gravedad = document.createElement('div');
-    gravedad.className = 'cb-gravedad';
+  function mostrarDetalle(reporte) {
+    dialogTitle.textContent = reporte.folio || 'Bache reportado';
     const valor = String(reporte.gravedad || '').toLowerCase();
-    gravedad.textContent = 'Gravedad: ' + (labels[valor] || 'No especificada');
-    contenedor.append(gravedad);
-
-    const descripcion = document.createElement('p');
-    descripcion.className = 'cb-descripcion';
-    descripcion.textContent = reporte.descripcion || 'Sin descripción';
-    contenedor.append(descripcion);
-
-    if (Array.isArray(reporte.fotografias)) {
-      for (const foto of reporte.fotografias.slice(0, 3)) {
-        if (typeof foto !== 'string' || !foto.startsWith('https://joyfxdjdzjcfbcgjnjsn.supabase.co/storage/v1/object/public/baches-publicos/')) continue;
-        const enlace = document.createElement('a');
-        enlace.className = 'cb-foto-enlace';
-        enlace.href = foto;
-        enlace.target = '_blank';
-        enlace.rel = 'noopener noreferrer';
-        enlace.setAttribute('aria-label', 'Abrir fotografía completa en una pestaña nueva');
-        const imagen = document.createElement('img');
-        imagen.className = 'cb-foto';
-        imagen.src = foto;
-        imagen.alt = 'Fotografía del bache sin recortar';
-        imagen.loading = 'lazy';
-        enlace.append(imagen);
-        const ayuda = document.createElement('small');
-        ayuda.className = 'cb-foto-ayuda';
-        ayuda.textContent = 'Haz clic en la imagen para verla completa';
-        enlace.append(ayuda);
-        contenedor.append(enlace);
-      }
+    dialogSeverity.textContent = 'Gravedad: ' + (labels[valor] || 'No especificada');
+    dialogDescription.textContent = reporte.descripcion || 'Sin descripción';
+    let fecha = 'No especificada';
+    if (reporte.creado_en) {
+      const d = new Date(reporte.creado_en);
+      if (!Number.isNaN(d.valueOf())) fecha = new Intl.DateTimeFormat('es-MX', {day:'2-digit',month:'long',year:'numeric'}).format(d);
     }
-    return contenedor;
+    dialogDate.textContent = fecha;
+    dialogPhotos.replaceChildren();
+    const fotos = Array.isArray(reporte.fotografias) ? reporte.fotografias.slice(0,3) : [];
+    let validas = 0;
+    for (const foto of fotos) {
+      if (typeof foto !== 'string' || !foto.startsWith('https://joyfxdjdzjcfbcgjnjsn.supabase.co/storage/v1/object/public/baches-publicos/')) continue;
+      validas++;
+      const figura = document.createElement('figure');
+      figura.className = 'cb-photo-frame';
+      const imagen = document.createElement('img');
+      imagen.className = 'cb-photo-full';
+      imagen.src = foto;
+      imagen.alt = 'Fotografía ' + validas + ' del reporte ' + dialogTitle.textContent;
+      imagen.loading = 'eager';
+      const pie = document.createElement('figcaption');
+      const enlace = document.createElement('a');
+      enlace.href = foto;
+      enlace.target = '_blank';
+      enlace.rel = 'noopener noreferrer';
+      enlace.textContent = 'Abrir fotografía original';
+      pie.append(enlace);
+      figura.append(imagen,pie);
+      dialogPhotos.append(figura);
+    }
+    if (!validas) {
+      const mensaje = document.createElement('p');
+      mensaje.className = 'cb-no-photos';
+      mensaje.textContent = 'No hay fotografías públicas disponibles para este reporte.';
+      dialogPhotos.append(mensaje);
+    }
+    if (!dialog.open) dialog.showModal();
   }
 
   async function cargarReportes() {
@@ -140,11 +165,11 @@
         if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
         const color = reporte.gravedad === 'grave' ? '#d64545' :
           reporte.gravedad === 'moderado' ? '#e5a238' : '#14766c';
-        new maplibregl.Marker({ color })
+        const marcador = new maplibregl.Marker({ color })
           .setLngLat([lng, lat])
-          .setPopup(new maplibregl.Popup({ offset: 20, maxWidth: '340px' })
-            .setDOMContent(crearDetalle(reporte)))
           .addTo(map);
+        marcador.getElement().setAttribute('aria-label', 'Ver detalle del reporte ' + (reporte.folio || ''));
+        marcador.getElement().addEventListener('click', () => mostrarDetalle(reporte));
         limites.extend([lng, lat]);
         cantidad++;
       }
