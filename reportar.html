@@ -57,6 +57,8 @@ $('reportForm').addEventListener('submit',e=>{e.preventDefault();const form=e.cu
 let enviando=false;
 async function enviarReporte(files,token){
  if(enviando)return;
+ const submit=$('reportForm').querySelector('button[type="submit"]');
+ if(submit.dataset.bloqueado==='1'){message('Este intento ya creó un registro. Evita enviarlo de nuevo para no duplicarlo.',true);return;}
  enviando=true;
  const boton=$('reportForm').querySelector('button[type="submit"]');
  boton.disabled=true;
@@ -73,18 +75,35 @@ async function enviarReporte(files,token){
   if(!r.ok)throw Error(j.error||'No se pudo registrar el reporte.');
   if(!j.autorizacion_evidencias?.token)throw Error('El reporte se registró, pero no se recibió autorización para las fotografías. Conserva el folio: '+j.folio);
   const errores=[];
+  let subidas=0;
   for(const f of files){
    const fd=new FormData();fd.append('token',j.autorizacion_evidencias.token);fd.append('archivo',f,f.name);
    try{
     const u=await fetch('https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/subir-evidencias-bache',{method:'POST',body:fd});
-    const uj=await u.json().catch(()=>({}));if(!u.ok)throw Error(uj.error||'Error al subir fotografía');
+    const uj=await u.json().catch(()=>({}));
+    if(!u.ok)throw Error(uj.error||'Error al subir fotografía');
+    subidas++;
    }catch(err){errores.push(f.name+': '+err.message);}
   }
-  // El folio y la clave deben mostrarse incluso si una fotografía falla.
-  message('Folio: '+j.folio+'\nClave de seguimiento: '+j.clave_seguimiento+'\nEstado: pendiente de revisión.\n'+(errores.length?'Algunas fotografías no se guardaron: '+errores.join('; '):'Fotografías recibidas: '+files.length)+ '\nGuarda el folio y la clave: la clave no podrá recuperarse después.');
+  if(errores.length){
+   message('ATENCIÓN: El envío no se completó porque falló la carga de fotografías.\n'+
+    'Fotografías guardadas: '+subidas+' de '+files.length+'.\n'+
+    'Folio del registro creado: '+(j.folio||'No disponible')+'\n'+
+    'Clave de seguimiento: '+(j.clave_seguimiento||'No disponible')+'\n'+
+    'Errores: '+errores.join('; ')+'\n'+
+    'No vuelvas a enviar el formulario: se podría crear un reporte duplicado. Conserva estos datos y solicita ayuda para completar las evidencias.',true);
+   boton.textContent='Envío incompleto';
+   boton.dataset.bloqueado='1';
+  }else{
+   message('Reporte y fotografías recibidos correctamente.\nFolio: '+j.folio+
+    '\nClave de seguimiento: '+j.clave_seguimiento+
+    '\nFotografías guardadas: '+subidas+'\nEstado: pendiente de revisión.\nGuarda el folio y la clave: la clave no podrá recuperarse después.');
+   boton.textContent='Reporte enviado';
+   boton.dataset.bloqueado='1';
+  }
   window.turnstile?.reset?.();
  }catch(err){message(err.message||'Error inesperado al enviar el reporte.',true);window.turnstile?.reset?.();}
- finally{enviando=false;boton.disabled=false;}
+ finally{enviando=false;boton.disabled=boton.dataset.bloqueado==='1';}
 }
-$('reportForm').addEventListener('reset',()=>{window.turnstile?.reset?.();setTimeout(()=>{clearPhotos();if(marker&&map){marker.remove();marker=null;}$('date').value=$('date').max;$('feedback').replaceChildren();$('feedback').className='';update();},0);});update();})();
+$('reportForm').addEventListener('reset',()=>{const boton=$('reportForm').querySelector('button[type="submit"]');delete boton.dataset.bloqueado;boton.disabled=false;boton.textContent='Revisar reporte';window.turnstile?.reset?.();setTimeout(()=>{clearPhotos();if(marker&&map){marker.remove();marker=null;}$('date').value=$('date').max;$('feedback').replaceChildren();$('feedback').className='';update();},0);});update();})();
 </script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
