@@ -22,4 +22,106 @@
 #homeMap{width:100%;height:min(64vh,620px);min-height:420px;border-radius:12px;background:#e5eeeb;overflow:hidden}
 .bx-notice{color:#607578;font-size:13px;line-height:1.5}
 @media(max-width:620px){main{padding:22px 14px 45px}#homeMap{height:55vh;min-height:340px}.bx-mapbox{padding:12px}}
-</style><link href="style.css" rel="stylesheet"/><link rel="stylesheet" href="premium.css"/></head><body class="bx-home cb-home"><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa y observa los baches reportados por la ciudadanía.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus">No hay reportes públicos disponibles por el momento.</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script>try{if(window.maplibregl){const map=new maplibregl.Map({container:'homeMap',style:'https://tiles.openfreemap.org/styles/liberty',center:[-96.9102,19.5438],zoom:12});map.addControl(new maplibregl.NavigationControl());map.on('error',()=>{document.getElementById('homeStatus').textContent='No se pudo cargar la cartografía. Las demás secciones siguen disponibles.'})}else{document.getElementById('homeStatus').textContent='No se pudo cargar la biblioteca del mapa.'}}catch(e){document.getElementById('homeStatus').textContent='No se pudo inicializar el mapa.'}</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
+</style><link href="style.css" rel="stylesheet"/><link rel="stylesheet" href="premium.css"/></head><body class="bx-home cb-home"><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa, ubica los puntos que necesitan atención y ayuda a hacer visibles nuestras calles.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus" role="status" aria-live="polite">Cargando reportes públicos…</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script>
+(() => {
+  'use strict';
+  const estado = document.getElementById('homeStatus');
+  const punto = [-96.9102, 19.5438];
+  const endpoint = 'https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/listar-baches-publicos';
+
+  if (!window.maplibregl) {
+    estado.textContent = 'No se pudo cargar la biblioteca del mapa.';
+    return;
+  }
+
+  let map;
+  try {
+    map = new maplibregl.Map({
+      container: 'homeMap',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: punto,
+      zoom: 12
+    });
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  } catch (error) {
+    estado.textContent = 'No se pudo inicializar el mapa.';
+    return;
+  }
+
+  // Los popups se construyen con nodos DOM para no interpretar HTML de terceros.
+  function crearDetalle(reporte) {
+    const contenedor = document.createElement('div');
+    contenedor.style.cssText = 'max-width:260px;color:#18383b;font:14px system-ui,sans-serif;overflow-wrap:anywhere';
+    const titulo = document.createElement('strong');
+    titulo.textContent = reporte.folio || 'Bache reportado';
+    titulo.style.cssText = 'display:block;margin-bottom:8px';
+    contenedor.append(titulo);
+
+    const gravedad = document.createElement('div');
+    gravedad.textContent = 'Gravedad: ' + (reporte.gravedad || 'No especificada');
+    gravedad.style.marginBottom = '7px';
+    contenedor.append(gravedad);
+
+    const descripcion = document.createElement('p');
+    descripcion.textContent = reporte.descripcion || 'Sin descripción';
+    descripcion.style.cssText = 'margin:0 0 9px;line-height:1.4';
+    contenedor.append(descripcion);
+
+    if (Array.isArray(reporte.fotografias)) {
+      for (const foto of reporte.fotografias.slice(0, 3)) {
+        if (typeof foto !== 'string' || !foto.startsWith('https://joyfxdjdzjcfbcgjnjsn.supabase.co/storage/v1/object/public/baches-publicos/')) continue;
+        const enlace = document.createElement('a');
+        enlace.href = foto;
+        enlace.target = '_blank';
+        enlace.rel = 'noopener noreferrer';
+        const imagen = document.createElement('img');
+        imagen.src = foto;
+        imagen.alt = 'Fotografía del bache';
+        imagen.loading = 'lazy';
+        imagen.style.cssText = 'width:100%;max-height:145px;object-fit:cover;border-radius:8px;margin-top:5px';
+        enlace.append(imagen);
+        contenedor.append(enlace);
+      }
+    }
+    return contenedor;
+  }
+
+  async function cargarReportes() {
+    estado.textContent = 'Cargando reportes públicos…';
+    try {
+      const respuesta = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) throw new Error(datos.error || 'No fue posible consultar los reportes');
+      if (!Array.isArray(datos.reportes)) throw new Error('Respuesta inesperada del servicio');
+
+      const limites = new maplibregl.LngLatBounds();
+      let cantidad = 0;
+      for (const reporte of datos.reportes) {
+        const lat = Number(reporte.latitud);
+        const lng = Number(reporte.longitud);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
+        const color = reporte.gravedad === 'grave' ? '#d64545' :
+          reporte.gravedad === 'moderado' ? '#e5a238' : '#14766c';
+        new maplibregl.Marker({ color })
+          .setLngLat([lng, lat])
+          .setPopup(new maplibregl.Popup({ offset: 20, maxWidth: '300px' })
+            .setDOMContent(crearDetalle(reporte)))
+          .addTo(map);
+        limites.extend([lng, lat]);
+        cantidad++;
+      }
+      estado.textContent = cantidad
+        ? `${cantidad} ${cantidad === 1 ? 'bache aprobado disponible' : 'baches aprobados disponibles'}. Haz clic en un marcador para ver los detalles.`
+        : 'No hay reportes públicos disponibles por el momento.';
+      if (cantidad > 0) map.fitBounds(limites, { padding: 65, maxZoom: 15, duration: 450 });
+    } catch (error) {
+      estado.textContent = 'No fue posible cargar los reportes públicos: ' + (error.message || 'Error de conexión');
+    }
+  }
+
+  map.on('load', cargarReportes);
+  map.on('error', (error) => {
+    console.warn('Mapa:', error?.error?.message || 'Error de cartografía');
+  });
+})();
+</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
