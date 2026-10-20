@@ -1,14 +1,63 @@
 <!DOCTYPE html>
-
-<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Seguimiento a bache | CazaBachesMX</title><style>
-/* Navegación horizontal CazaBachesMX */
-.cb-header{background:#103b43;color:#fff;min-height:76px;display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1150px)/2));box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seguimiento | CazaBachesMX</title>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="premium.css">
+<style>
+.cb-header{background:#103b43;color:#fff;min-height:76px;display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1150px)/2));font-family:system-ui,sans-serif}
 .cb-brand{color:#fff!important;text-decoration:none!important;font-weight:800;font-size:21px}
-.cb-nav{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 20px;align-items:center;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-.cb-nav a{display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none!important;background:#fff;color:#13584f!important;border:1px solid #b8d2cc;border-radius:11px;padding:12px 19px;min-height:45px;box-sizing:border-box;font-size:15px;font-weight:700;transition:background .15s}
-.cb-nav a:hover,.cb-nav a:focus-visible{background:#dceee8}
-.cb-nav a[aria-current=page]{background:#116c61;color:#fff!important;border-color:#116c61}
-.cb-home .hero{margin-bottom:0!important}
-.cb-home main{padding-top:25px!important}
-@media(max-width:620px){.cb-header{padding:0 18px}.cb-nav{display:grid;grid-template-columns:1fr;gap:8px}.cb-nav a{width:100%}}
-</style><link href="style.css" rel="stylesheet"/><link href="premium.css" rel="stylesheet"/></head><body class="bx-home"><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>Seguimiento a bache</h1><p>Consulta el estado de tu reporte ciudadano.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a aria-current="page" href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox" style="max-width:650px"><label for="folio" style="display:block;font-weight:700;margin-bottom:9px">Folio de reporte</label><input id="folio" maxlength="60" placeholder="Introduce tu folio" style="width:100%;padding:13px;border:1px solid #bacdca;border-radius:10px;font:inherit"/><button id="consultar" style="margin-top:15px;padding:12px 18px;border:0;border-radius:10px;background:#116c61;color:white;font-weight:700;cursor:pointer">Consultar seguimiento</button><p aria-live="polite" id="resultado" role="status"></p></section></main><script>document.getElementById('consultar').onclick=()=>{const f=document.getElementById('folio').value.trim();document.getElementById('resultado').textContent=f?'No es posible consultar el folio: el servicio de seguimiento aún no está conectado.':'Introduce un folio para continuar.'}</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
+.cb-nav{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 20px;align-items:center}
+.cb-nav a{display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:#fff;color:#13584f;border:1px solid #b8d2cc;border-radius:11px;padding:12px 19px;min-height:45px;font-size:15px;font-weight:700}
+.cb-nav a[aria-current=page]{background:#102631;color:white;border-color:#102631}
+.bx-mapbox{background:#fff;border:1px solid #dce7e3;border-radius:18px;padding:25px;max-width:700px;box-shadow:0 5px 22px #10263110}
+.track-form label{display:block;font-weight:700;margin:15px 0 6px}
+.track-form input{width:100%;font:inherit;padding:14px 16px;border:1px solid #bdceca;border-radius:11px;color:#12343c}
+.track-form button{padding:14px 22px;border:0;border-radius:11px;background:#103b43;color:white;font:700 15px system-ui;cursor:pointer;margin-top:18px}
+.track-form button:disabled{opacity:.55}
+.track-message{margin-top:20px;padding:16px;background:#e7f4ef;border-radius:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.track-message.error{background:#fff0f1;color:#9a2535}
+.track-message:empty{display:none}
+.track-hint{color:#607578;font-size:14px;line-height:1.5}
+@media(max-width:620px){.cb-header{padding:0 18px}.cb-nav{display:grid;grid-template-columns:1fr;gap:8px}.bx-mapbox{padding:18px}}
+</style>
+</head>
+<body class="bx-home">
+<header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header>
+<main>
+<div class="page-intro"><h1>Seguimiento a bache</h1><p>Consulta de manera privada el estado de tu reporte ciudadano.</p></div>
+<nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂ Mapa</a><a href="reportar.html">＋ Reportar bache</a><a href="juridico.html">⚖ Orientación jurídica</a><a aria-current="page" href="seguimiento.html">◷ Seguimiento</a></nav>
+<section class="bx-mapbox">
+<h2>Consultar estado de un reporte</h2>
+<p class="track-hint">Necesitas el folio <strong>CBMX-...</strong> y la clave privada que recibiste cuando enviaste el reporte. Esta clave no se puede recuperar.</p>
+<form id="trackForm" class="track-form">
+<label for="folio">Folio del bache</label><input id="folio" required maxlength="40" autocomplete="off" placeholder="CBMX-XXXXXXXXXXXX">
+<label for="clave">Clave de seguimiento</label><input id="clave" required maxlength="100" autocomplete="off" type="password" placeholder="Clave privada del reporte">
+<button id="consultar" type="submit">Consultar seguimiento</button>
+</form>
+<div id="resultado" class="track-message" role="status" aria-live="polite"></div>
+<p class="track-hint">Los estados posibles son: incompleto, pendiente de revisión, aprobado y rechazado. Este servicio no publica tu clave ni tus datos de acceso.</p>
+</section>
+</main>
+<footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer>
+<script>
+(()=>{'use strict';
+ const endpoint='https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/portal-servicios';
+ const $=id=>document.getElementById(id), out=$('resultado'), btn=$('consultar');
+ const estados={incompleto:'Incompleto: faltan fotografías',pendiente:'Pendiente de revisión',aprobado:'Aprobado y publicado',rechazado:'Rechazado'};
+ const gravedad={leve:'Tuerce pies (Leve)',moderado:'Tumba bicis (Moderado)',grave:'Cambia pieles (Grave)'};
+ function mensaje(text,error=false){out.textContent=text;out.classList.toggle('error',error)}
+ function fecha(x){if(!x)return 'No disponible';const d=new Date(x);return isNaN(d.getTime())?'No disponible':d.toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});}
+ $('trackForm').addEventListener('submit',async e=>{
+   e.preventDefault();btn.disabled=true;mensaje('Consultando el estado de tu reporte...');
+   try{
+     const folio=$('folio').value.trim().toUpperCase(),clave=$('clave').value.trim();
+     const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'seguimiento_bache',folio,clave}),cache:'no-store'});
+     const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'No se pudo consultar el reporte');
+     const v=j.reporte||{};
+     mensaje('Folio: '+(v.folio||folio)+'\nEstado: '+(estados[v.estado]||'Por determinar')+'\nGravedad: '+(gravedad[v.gravedad]||'No especificada')+'\nFecha del reporte: '+fecha(v.creado_en)+'\nÚltima actualización: '+fecha(v.actualizado_en));
+   }catch(err){mensaje(err.message||'Error de conexión',true)}finally{btn.disabled=false}
+ });
+})();
+</script>
+</body></html>

@@ -18,6 +18,27 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 #notice{white-space:pre-wrap;margin:16px 0;padding:13px 16px;border-radius:10px;background:#e6f2ee;color:#102631;border:1px solid #c7e0d7}
 #notice.error{background:#fff0f1;color:#982332;border-color:#e7b9c0}
 #notice:empty{display:none}.hidden{display:none}
+
+
+/* Administración avanzada, compatible con el panel de moderación actual */
+.cb-advanced-heading{margin-top:28px;border-top:1px solid #dce7e3;padding-top:28px}
+.cb-advanced-intro{font-size:14px;color:#61787c;line-height:1.5}
+.cb-mini-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px}
+.cb-advanced-panel{background:#f7faf8;border:1px solid #dce8e3;border-radius:15px;padding:18px;margin-top:13px}
+.cb-advanced-record{padding:16px 0;border-bottom:1px solid #dce8e3;overflow-wrap:anywhere}
+.cb-advanced-record:last-child{border-bottom:0}
+.cb-advanced-record h4{margin:3px 0 9px;font-size:16px}
+.cb-advanced-record p{line-height:1.5;margin:6px 0}
+.cb-pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:#dbeee5;color:#16493f}
+.cb-pill.aprobado{background:#def4e2}.cb-pill.rechazado{background:#f9e4e5;color:#952b34}
+.cb-pill.incompleto{background:#f9efce;color:#66571e}
+.cb-panel-message{white-space:pre-wrap;padding:10px 13px;margin:12px 0;background:#e7f4f0;border-radius:10px;overflow-wrap:anywhere}
+.cb-panel-message:empty{display:none}.cb-panel-message.error{background:#fff0f1;color:#922936}
+.cb-doc-links{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.cb-doc-links a{color:#0d685c;text-decoration:underline}
+.cb-legal-select,.cb-legal-note{font:inherit;border:1px solid #bfcec8;border-radius:10px;padding:10px;width:100%;max-width:490px}
+.cb-legal-note{min-height:76px;display:block;margin-top:10px}
+.cb-advanced-record button{padding:9px 13px}
 </style>
 </head>
 <body>
@@ -37,6 +58,18 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 <button id="refresh" class="secondary">Actualizar reportes</button>
 <button id="logout" class="secondary">Cerrar sesión</button>
 <div id="reports"></div>
+<div class="cb-advanced-heading">
+  <h2>Administración avanzada</h2>
+  <p class="cb-advanced-intro">Consulta todo el historial, retira publicaciones del mapa y reabre reportes rechazados cuando existan fotografías privadas.</p>
+  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Solicitudes jurídicas</button></div>
+  <section id="advancedSection" class="cb-advanced-panel hidden" aria-labelledby="advancedTitle">
+    <h3 id="advancedTitle">Historial de baches</h3><div id="advancedMsg" class="cb-panel-message" role="status"></div><div id="advancedResults"></div>
+  </section>
+  <section id="legalSection" class="cb-advanced-panel hidden" aria-labelledby="legalTitle">
+    <h3 id="legalTitle">Expedientes jurídicos privados</h3><p class="cb-advanced-intro">Los datos de contacto y documentos son confidenciales. Las ligas de archivos caducan en dos minutos.</p>
+    <div id="legalMsg" class="cb-panel-message" role="status"></div><div id="legalResults"></div>
+  </section>
+</div>
 </section>
 <p id="notice" role="status" aria-live="polite"></p>
 </main>
@@ -136,6 +169,117 @@ document.getElementById('logout').onclick=async()=>{
 };
 if(PUBLIC_KEY.startsWith('PEGAR_AQUI'))showNotice('Configuración pendiente: agregar la clave pública de Supabase.',true);
 else start();
+
+// Módulos nuevos: reutilizan la sesión ya autenticada; no alteran aprobar/rechazar.
+const PORTAL_ENDPOINT = SUPABASE_URL + '/functions/v1/portal-servicios';
+function portalMessage(id,text,error=false){
+  const e=document.getElementById(id);e.textContent=text||'';e.classList.toggle('error',!!error);
+}
+async function portalCall(body){
+  const {data:{session},error:authError}=await client.auth.getSession();
+  if(authError||!session)throw Error('Tu sesión ha caducado. Vuelve a iniciar sesión.');
+  const r=await fetch(PORTAL_ENDPOINT,{
+    method:'POST',headers:{'Content-Type':'application/json',
+    'Authorization':'Bearer '+session.access_token,'apikey':PUBLIC_KEY},
+    body:JSON.stringify(body),cache:'no-store'
+  });
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(j.error||'No se pudo completar la operación (HTTP '+r.status+')');
+  return j;
+}
+const fechas=(value)=>{
+  const d=new Date(value);return value&&!isNaN(d.getTime())?d.toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'}):'Sin fecha';
+};
+const estadosBache={incompleto:'Incompleto',pendiente:'Pendiente',aprobado:'Aprobado',rechazado:'Rechazado'};
+const gravedadesBache={leve:'Tuerce pies (Leve)',moderado:'Tumba bicis (Moderado)',grave:'Cambia pieles (Grave)'};
+function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
+
+async function loadAdvanced(){
+ const target=document.getElementById('advancedResults');
+ portalMessage('advancedMsg','Cargando historial...');target.replaceChildren();
+ try{
+  const data=await portalCall({accion:'listar_baches_admin'});
+  const items=data.reportes||[];
+  target.append(node('p','cb-advanced-intro','Registros consultados: '+items.length+' (máximo 300). Incluye pendientes, aprobados, rechazados e incompletos.'));
+  for(const b of items){
+    const box=node('article','cb-advanced-record');
+    box.append(node('h4','',b.folio||'Reporte sin folio'));
+    box.append(node('span','cb-pill '+(b.estado||''),estadosBache[b.estado]||b.estado));
+    box.append(node('p','',b.descripcion||'Sin descripción'));
+    box.append(node('p','cb-advanced-intro',(gravedadesBache[b.gravedad]||b.gravedad||'')+' · '+fechas(b.creado_en)+' · Fotografías: '+b.fotografias));
+    if(b.estado==='aprobado'){
+      const bt=node('button','danger','Retirar del mapa');bt.type='button';
+      bt.onclick=()=>changeAdvanced(b,'retirar',bt);box.append(bt);
+    }else if(b.estado==='rechazado' && b.fotografias>0){
+      const bt=node('button','secondary','Reabrir para revisión');bt.type='button';
+      bt.onclick=()=>changeAdvanced(b,'reabrir',bt);box.append(bt);
+    }
+    target.append(box);
+  }
+  portalMessage('advancedMsg','');
+ }catch(e){portalMessage('advancedMsg',e.message||'Error de conexión',true)}
+}
+async function changeAdvanced(b,decision,button){
+ const text=decision==='retirar'?'retirar este reporte del mapa público y conservar el historial':'reabrir este reporte para nueva revisión';
+ if(!confirm('¿Confirmas que deseas '+text+'?'))return;
+ button.disabled=true;portalMessage('advancedMsg','Procesando la operación...');
+ try{
+   const j=await portalCall({accion:'cambiar_bache_admin',reporte_id:b.id,decision});
+   await loadAdvanced();await load();
+   portalMessage('advancedMsg',j.mensaje||'Operación realizada',!!j.limpieza_pendiente);
+ }catch(e){portalMessage('advancedMsg',e.message||'No se pudo modificar el reporte',true)}
+ finally{button.disabled=false}
+}
+
+const estadosLegal={recibida:'Recibida',en_revision:'En revisión',informacion_pendiente:'Información pendiente',orientacion_emitida:'Orientación emitida',cerrada:'Cerrada'};
+async function loadLegal(){
+ const target=document.getElementById('legalResults');target.replaceChildren();
+ portalMessage('legalMsg','Cargando expedientes privados...');
+ try{
+  const j=await portalCall({accion:'listar_juridicos_admin'}), casos=j.expedientes||[];
+  target.append(node('p','cb-advanced-intro','Expedientes recientes: '+casos.length+' (máximo 100).'));
+  for(const exp of casos){
+   const d=exp.datos||{};
+   const box=node('article','cb-advanced-record');
+   box.append(node('h4','',exp.folio||'Sin folio'));
+   box.append(node('span','cb-pill',estadosLegal[exp.estado]||exp.estado));
+   box.append(node('p','',String(d.nombre||'')+' · '+String(d.telefono||'')+' · '+String(d.correo||'')));
+   box.append(node('p','',String(d.tipo||'')+' · '+String(d.fecha||'')+' · '+String(d.calle||'')+' / '+String(d.colonia||'')));
+   box.append(node('p','',d.descripcion||'Sin descripción'));
+   if(d.folio_bache)box.append(node('p','cb-advanced-intro','Folio relacionado: '+d.folio_bache));
+   const links=node('div','cb-doc-links');
+   for(const file of exp.archivos||[]){
+     if(typeof file.url!=='string'||!file.url.startsWith(SUPABASE_URL+'/storage/v1/object/sign/juridico-privado/'))continue;
+     const a=node('a','',file.nombre||'Adjunto');a.href=file.url;a.target='_blank';a.rel='noopener noreferrer';links.append(a);
+   }
+   box.append(links);
+   const select=node('select','cb-legal-select');select.setAttribute('aria-label','Estado de '+exp.folio);
+   for(const [value,label] of Object.entries(estadosLegal)){
+    const opt=node('option','',label);opt.value=value;opt.selected=exp.estado===value;select.append(opt);
+   }
+   const note=node('textarea','cb-legal-note');note.placeholder='Notas internas (no se muestran al ciudadano)';note.value=exp.nota_interna||'';note.maxLength=1000;
+   const btn=node('button','secondary','Guardar estado');btn.type='button';
+   btn.onclick=async()=>{
+    if(!confirm('¿Guardar el nuevo estado de '+exp.folio+'?'))return;
+    btn.disabled=true;
+    try{const result=await portalCall({accion:'cambiar_juridico_admin',id:exp.id,estado:select.value,nota:note.value});
+      await loadLegal();portalMessage('legalMsg',result.mensaje||'Actualizado');
+    }catch(e){portalMessage('legalMsg',e.message||'Error al guardar',true)}finally{btn.disabled=false}
+   };
+   box.append(select,note,btn);target.append(box);
+  }
+  portalMessage('legalMsg','');
+ }catch(e){portalMessage('legalMsg',e.message||'No se pudieron cargar los expedientes',true)}
+}
+document.getElementById('openAdvanced').addEventListener('click',()=>{
+ const section=document.getElementById('advancedSection');section.classList.toggle('hidden');
+ if(!section.classList.contains('hidden'))loadAdvanced();
+});
+document.getElementById('openLegal').addEventListener('click',()=>{
+ const section=document.getElementById('legalSection');section.classList.toggle('hidden');
+ if(!section.classList.contains('hidden'))loadLegal();
+});
+
 </script>
 </body>
 </html>
