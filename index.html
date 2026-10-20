@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>CazaBachesMX | Mapa ciudadano</title><link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/><style>
+/* Navegación horizontal CazaBachesMX */
+.cb-header{background:#103b43;color:#fff;min-height:76px;display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1150px)/2));box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.cb-brand{color:#fff!important;text-decoration:none!important;font-weight:800;font-size:21px}
+.cb-nav{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 20px;align-items:center;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.cb-nav a{display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none!important;background:#fff;color:#13584f!important;border:1px solid #b8d2cc;border-radius:11px;padding:12px 19px;min-height:45px;box-sizing:border-box;font-size:15px;font-weight:700;transition:background .15s}
+.cb-nav a:hover,.cb-nav a:focus-visible{background:#dceee8}
+.cb-nav a[aria-current=page]{background:#116c61;color:#fff!important;border-color:#116c61}
+.cb-home .hero{margin-bottom:0!important}
+.cb-home main{padding-top:30px!important}
+@media(max-width:620px){.cb-header{padding:0 18px}.cb-nav{display:grid;grid-template-columns:1fr;gap:8px}.cb-nav a{width:100%}}
+</style><style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#18383b;background:#f3f7f6}
+*{box-sizing:border-box}body{margin:0}main{max-width:1150px;margin:0 auto;padding:30px 20px 65px}
+.hero p:first-child{font-size:13px;letter-spacing:.07em;margin:0 0 15px}
+.hero h1{font-family:Georgia,serif;font-size:clamp(30px,4vw,49px);line-height:1.15;margin:0 0 14px;color:#173a3d}
+.hero p:last-child{font-size:16px;margin:0;color:#435f62}
+.bx-mapbox{background:#fff;border:1px solid #dce7e3;border-radius:17px;padding:18px;margin-top:8px;box-shadow:0 4px 20px #123d3c0a}
+.bx-mapbox h2{font-family:Georgia,serif;margin:2px 0 14px;font-size:24px}
+#homeMap{width:100%;height:min(64vh,620px);min-height:420px;border-radius:12px;background:#e5eeeb;overflow:hidden}
+.bx-notice{color:#607578;font-size:13px;line-height:1.5}
+@media(max-width:620px){main{padding:22px 14px 45px}#homeMap{height:55vh;min-height:340px}.bx-mapbox{padding:12px}}
+</style><link href="style.css" rel="stylesheet"/><link rel="stylesheet" href="premium.css"/></head><body class="bx-home cb-home"><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>Mapa ciudadano</h1><p class="muted">Explora el mapa de Xalapa y observa los baches reportados por la ciudadanía.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a aria-current="page" href="index.html">⌂  Mapa</a><a href="reportar.html">＋  Reportar bache</a><a href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><section class="bx-mapbox"><div aria-label="Mapa de Xalapa" id="homeMap" role="region"></div><p class="bx-notice" id="homeStatus">No hay reportes públicos disponibles por el momento.</p><p class="bx-notice">Cartografía de OpenFreeMap y colaboradores de OpenStreetMap. El mapa necesita internet.</p></section></main><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script>try{if(window.maplibregl){const map=new maplibregl.Map({container:'homeMap',style:'https://tiles.openfreemap.org/styles/liberty',center:[-96.9102,19.5438],zoom:12});map.addControl(new maplibregl.NavigationControl());map.on('error',()=>{document.getElementById('homeStatus').textContent='No se pudo cargar la cartografía. Las demás secciones siguen disponibles.'})}else{document.getElementById('homeStatus').textContent='No se pudo cargar la biblioteca del mapa.'}}catch(e){document.getElementById('homeStatus').textContent='No se pudo inicializar el mapa.'}</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
