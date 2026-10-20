@@ -52,6 +52,39 @@ function clearPhotos(){photoUrls.forEach(URL.revokeObjectURL);photoUrls=[];$('pr
 $('photos').addEventListener('change',()=>{clearPhotos();const files=[...$('photos').files];for(const f of files){if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>5*1024*1024)continue;const url=URL.createObjectURL(f);photoUrls.push(url);const img=document.createElement('img');img.src=url;img.alt='Vista previa de '+f.name;$('previews').appendChild(img);}update();});
 $('date').max=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('date').value=$('date').max;
 function message(s,error=false){const d=$('feedback');d.className='status'+(error?' error':'');d.textContent=s;}
-$('reportForm').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;if(!validCoords()){message('Selecciona la ubicación del bache en el mapa o introduce coordenadas válidas.',true);return;}const [lat,lng]=coords();if(lat<19.3||lat>19.8||lng< -97.2||lng> -96.6){message('El punto parece estar fuera del área aproximada de Xalapa. Verifica la ubicación.',true);return;}if(!form.checkValidity()){form.reportValidity();message('Completa los campos obligatorios y acepta las confirmaciones.',true);return;}const files=[...$('photos').files];if(files.length<1||files.length>3){message('Adjunta entre 1 y 3 fotografías.',true);return;}for(const f of files){if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>5*1024*1024||f.size===0){message('Las imágenes deben ser JPG, PNG o WebP y pesar entre 1 byte y 5 MB cada una.',true);return;}}if($('date').value>$('date').max){message('La fecha no puede ser futura.',true);return;}const token=window.turnstile?.getResponse?.();if(!token){message('Completa la verificación de seguridad antes de continuar.',true);return;}message('Datos y verificación de seguridad completados. El envío todavía no está habilitado porque falta conectar el almacenamiento seguro de fotografías. No se ha enviado ni almacenado información.');});
+$('reportForm').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;if(!validCoords()){message('Selecciona la ubicación del bache en el mapa o introduce coordenadas válidas.',true);return;}const [lat,lng]=coords();if(lat<19.3||lat>19.8||lng< -97.2||lng> -96.6){message('El punto parece estar fuera del área aproximada de Xalapa. Verifica la ubicación.',true);return;}if(!form.checkValidity()){form.reportValidity();message('Completa los campos obligatorios y acepta las confirmaciones.',true);return;}const files=[...$('photos').files];if(files.length<1||files.length>3){message('Adjunta entre 1 y 3 fotografías.',true);return;}for(const f of files){if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>5*1024*1024||f.size===0){message('Las imágenes deben ser JPG, PNG o WebP y pesar entre 1 byte y 5 MB cada una.',true);return;}}if($('date').value>$('date').max){message('La fecha no puede ser futura.',true);return;}const token=window.turnstile?.getResponse?.();if(!token){message('Completa la verificación de seguridad antes de continuar.',true);return;}enviarReporte(files,token);});
+
+let enviando=false;
+async function enviarReporte(files,token){
+ if(enviando)return;
+ enviando=true;
+ const boton=$('reportForm').querySelector('button[type="submit"]');
+ boton.disabled=true;
+ message('Registrando reporte y preparando almacenamiento privado de fotografías…');
+ try{
+  const calle=$('street').value.trim(), colonia=$('colony').value.trim(), descripcion=$('description').value.trim();
+  const detalle=[calle, colonia&&('Colonia: '+colonia), 'Fecha de observación: '+$('date').value, descripcion].filter(Boolean).join(' | ');
+  if(detalle.length<10||detalle.length>1000)throw Error('La información del reporte debe tener entre 10 y 1000 caracteres.');
+  const gravedad={Leve:'leve',Moderada:'moderado',Grave:'grave'}[$('severity').value];
+  const r=await fetch('https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/crear-reporte-bache',{
+   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({latitud:coords()[0],longitud:coords()[1],descripcion:detalle,gravedad,turnstile_token:token})
+  });
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(j.error||'No se pudo registrar el reporte.');
+  if(!j.autorizacion_evidencias?.token)throw Error('El reporte se registró, pero no se recibió autorización para las fotografías. Conserva el folio: '+j.folio);
+  const errores=[];
+  for(const f of files){
+   const fd=new FormData();fd.append('token',j.autorizacion_evidencias.token);fd.append('archivo',f,f.name);
+   try{
+    const u=await fetch('https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/subir-evidencia-bache',{method:'POST',body:fd});
+    const uj=await u.json().catch(()=>({}));if(!u.ok)throw Error(uj.error||'Error al subir fotografía');
+   }catch(err){errores.push(f.name+': '+err.message);}
+  }
+  // El folio y la clave deben mostrarse incluso si una fotografía falla.
+  message('Folio: '+j.folio+'\nClave de seguimiento: '+j.clave_seguimiento+'\nEstado: pendiente de revisión.\n'+(errores.length?'Algunas fotografías no se guardaron: '+errores.join('; '):'Fotografías recibidas: '+files.length)+ '\nGuarda el folio y la clave: la clave no podrá recuperarse después.');
+  window.turnstile?.reset?.();
+ }catch(err){message(err.message||'Error inesperado al enviar el reporte.',true);window.turnstile?.reset?.();}
+ finally{enviando=false;boton.disabled=false;}
+}
 $('reportForm').addEventListener('reset',()=>{window.turnstile?.reset?.();setTimeout(()=>{clearPhotos();if(marker&&map){marker.remove();marker=null;}$('date').value=$('date').max;$('feedback').replaceChildren();$('feedback').className='';update();},0);});update();})();
 </script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
