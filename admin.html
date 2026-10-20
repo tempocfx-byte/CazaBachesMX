@@ -1,15 +1,141 @@
-<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración | CazaBachesMX</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="premium.css"><style>body{background:#f1f7f4;color:#102631;font-family:system-ui,sans-serif}main{max-width:1050px;margin:45px auto;padding:20px}.panel{background:white;border-radius:20px;padding:28px;margin:20px 0;box-shadow:0 8px 35px #10263112}input{display:block;padding:14px;margin:12px 0;width:100%;max-width:440px;border:1px solid #b9d0c8;border-radius:10px}button{padding:12px 18px;background:#102631;color:white;border:0;border-radius:10px;font-weight:700;cursor:pointer;margin:6px 6px 6px 0}button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#102631}.danger{background:#a52c37}.item{border-top:1px solid #e1ebe8;padding:20px 0}.photos{display:flex;gap:12px;flex-wrap:wrap}.photos img{width:180px;max-height:180px;object-fit:cover;border-radius:12px}small{color:#5c7476}#notice{white-space:pre-wrap} .hidden{display:none}</style></head><body><header style="background:#102631;color:white;padding:24px"><strong>CazaBachesMX · Administración</strong></header><main><h1>Revisión de reportes</h1><p>Acceso exclusivo para administradores autorizados.</p><section id="login" class="panel"><h2>Iniciar sesión</h2><form id="loginForm"><label>Correo electrónico<input id="email" type="email" autocomplete="username" required></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label><button>Ingresar</button></form></section><section id="workspace" class="panel hidden"><button id="refresh" class="secondary">Actualizar reportes</button><button id="logout" class="secondary">Cerrar sesión</button><div id="reports"></div></section><p id="notice" role="status" aria-live="polite"></p></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administración | CazaBachesMX</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="premium.css">
+<style>
+body{background:#f1f7f4;color:#102631;font-family:system-ui,sans-serif}
+main{max-width:1050px;margin:45px auto;padding:20px}
+.panel{background:white;border-radius:20px;padding:28px;margin:20px 0;box-shadow:0 8px 35px #10263112}
+input{display:block;padding:14px;margin:12px 0;width:100%;max-width:440px;border:1px solid #b9d0c8;border-radius:10px}
+button{padding:12px 18px;background:#102631;color:white;border:0;border-radius:10px;font-weight:700;cursor:pointer;margin:6px 6px 6px 0}
+button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#102631}.danger{background:#a52c37}
+.item{border-top:1px solid #e1ebe8;padding:20px 0}.photos{display:flex;gap:12px;flex-wrap:wrap}
+.photos img{width:180px;max-height:180px;object-fit:cover;border-radius:12px}small{color:#5c7476}
+#notice{white-space:pre-wrap;margin:16px 0;padding:13px 16px;border-radius:10px;background:#e6f2ee;color:#102631;border:1px solid #c7e0d7}
+#notice.error{background:#fff0f1;color:#982332;border-color:#e7b9c0}
+#notice:empty{display:none}.hidden{display:none}
+</style>
+</head>
+<body>
+<header style="background:#102631;color:white;padding:24px"><strong>CazaBachesMX · Administración</strong></header>
+<main>
+<h1>Revisión de reportes</h1>
+<p>Acceso exclusivo para administradores autorizados.</p>
+<section id="login" class="panel">
+<h2>Iniciar sesión</h2>
+<form id="loginForm">
+<label>Correo electrónico<input id="email" type="email" autocomplete="username" required></label>
+<label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+<button>Ingresar</button>
+</form>
+</section>
+<section id="workspace" class="panel hidden">
+<button id="refresh" class="secondary">Actualizar reportes</button>
+<button id="logout" class="secondary">Cerrar sesión</button>
+<div id="reports"></div>
+</section>
+<p id="notice" role="status" aria-live="polite"></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
 const SUPABASE_URL='https://joyfxdjdzjcfbcgjnjsn.supabase.co';
-// REEMPLAZAR ÚNICAMENTE CON LA CLAVE PÚBLICA (anon / publishable), NUNCA service_role.
+// Solo clave pública publishable, nunca service_role ni secret.
 const PUBLIC_KEY='sb_publishable_sJBe2DGTBbgKv7nU586MzQ_1sagV6YN';
-const notice=document.getElementById('notice');const login=document.getElementById('login');const workspace=document.getElementById('workspace');const reports=document.getElementById('reports');
+const notice=document.getElementById('notice');
+const login=document.getElementById('login');
+const workspace=document.getElementById('workspace');
+const reports=document.getElementById('reports');
+// Mostrar avisos cerca de los controles del panel o del inicio de sesión.
+workspace.insertBefore(notice,reports);
 const client=window.supabase.createClient(SUPABASE_URL,PUBLIC_KEY);
 const safe=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function call(body){const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Inicia sesión');const res=await fetch(`${SUPABASE_URL}/functions/v1/administrar-reportes`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify(body)});const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.error||'Error de conexión');return data}
-async function load(){notice.textContent='Consultando reportes...';try{const data=await call({accion:'listar'});const pending=(data.reportes||[]).filter(r=>r.estado==='pendiente');reports.replaceChildren();const h=document.createElement('h2');h.textContent=`Pendientes (${pending.length})`;reports.append(h);for(const r of pending){const box=document.createElement('article');box.className='item';box.innerHTML=`<h3>${safe(r.folio)}</h3><p>${safe(r.descripcion)}</p><small>Gravedad: ${safe(r.gravedad)} · Fecha: ${safe(r.creado_en)} · Coordenadas: ${safe(r.latitud)}, ${safe(r.longitud)}</small><div class="photos"></div>`;const pics=box.querySelector('.photos');for(const ev of (data.evidencias||[]).filter(e=>e.reporte_id===r.id)){if(!ev.url)continue;const a=document.createElement('a');a.href=ev.url;a.target='_blank';a.rel='noopener noreferrer';const img=document.createElement('img');img.src=ev.url;img.alt='Fotografía del reporte';a.append(img);pics.append(a)}const yes=document.createElement('button');yes.textContent='Aprobar';yes.onclick=()=>resolve(r.id,'aprobar',yes);const no=document.createElement('button');no.className='danger';no.textContent='Rechazar';no.onclick=()=>resolve(r.id,'rechazar',no);box.append(yes,no);reports.append(box)}notice.textContent='';}catch(e){notice.textContent=e.message}}
-async function resolve(id,decision,button){if(!confirm('¿Confirmas que deseas '+decision+' este reporte?'))return;button.disabled=true;try{const d=await call({accion:'resolver',reporte_id:id,decision});notice.textContent=d.mensaje;await load()}catch(e){notice.textContent=e.message}finally{button.disabled=false}}
-document.getElementById('loginForm').onsubmit=async(e)=>{e.preventDefault();notice.textContent='Iniciando sesión...';const {error}=await client.auth.signInWithPassword({email:document.getElementById('email').value,password:document.getElementById('password').value});if(error){notice.textContent=error.message;return}document.getElementById('password').value='';await start()};
-async function start(){const {data:{session}}=await client.auth.getSession();login.classList.toggle('hidden',!!session);workspace.classList.toggle('hidden',!session);if(session)await load()}
-document.getElementById('refresh').onclick=load;document.getElementById('logout').onclick=async()=>{await client.auth.signOut();reports.replaceChildren();notice.textContent='Sesión cerrada';await start()};
-if(PUBLIC_KEY.startsWith('PEGAR_AQUI'))notice.textContent='Configuración pendiente: agregar la clave pública de Supabase.';else start();
-</script></body></html>
+function showNotice(text,isError=false){
+  notice.textContent=text||'';
+  notice.classList.toggle('error',!!isError);
+}
+async function call(body){
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError)throw sessionError;
+  if(!session)throw Error('Inicia sesión');
+  const res=await fetch(`${SUPABASE_URL}/functions/v1/administrar-reportes`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+    body:JSON.stringify(body)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw Error(data.error||data.message||`Error de conexión (HTTP ${res.status})`);
+  return data;
+}
+async function load(){
+  showNotice('Consultando reportes...');
+  try{
+    const data=await call({accion:'listar'});
+    const pending=(data.reportes||[]).filter(r=>r.estado==='pendiente');
+    reports.replaceChildren();
+    const h=document.createElement('h2');
+    h.textContent=`Pendientes (${pending.length})`;
+    reports.append(h);
+    for(const r of pending){
+      const box=document.createElement('article');
+      box.className='item';
+      box.innerHTML=`<h3>${safe(r.folio)}</h3><p>${safe(r.descripcion)}</p><small>Gravedad: ${safe(r.gravedad)} · Fecha: ${safe(r.creado_en)} · Coordenadas: ${safe(r.latitud)}, ${safe(r.longitud)}</small><div class="photos"></div>`;
+      const pics=box.querySelector('.photos');
+      for(const ev of (data.evidencias||[]).filter(e=>e.reporte_id===r.id)){
+        if(!ev.url)continue;
+        const a=document.createElement('a');a.href=ev.url;a.target='_blank';a.rel='noopener noreferrer';
+        const img=document.createElement('img');img.src=ev.url;img.alt='Fotografía del reporte';
+        a.append(img);pics.append(a);
+      }
+      const yes=document.createElement('button');yes.textContent='Aprobar';
+      yes.onclick=()=>resolve(r.id,'aprobar',yes);
+      const no=document.createElement('button');no.className='danger';no.textContent='Rechazar';
+      no.onclick=()=>resolve(r.id,'rechazar',no);
+      box.append(yes,no);reports.append(box);
+    }
+    showNotice('');
+  }catch(e){showNotice(e.message||'Error al consultar reportes',true)}
+}
+async function resolve(id,decision,button){
+  if(!confirm('¿Confirmas que deseas '+decision+' este reporte?'))return;
+  button.disabled=true;
+  showNotice('Procesando '+decision+'...');
+  try{
+    const d=await call({accion:'resolver',reporte_id:id,decision});
+    await load();
+    showNotice(d.mensaje||'Operación realizada correctamente.');
+  }catch(e){
+    showNotice(e.message||'No se pudo procesar el reporte.',true);
+    notice.scrollIntoView({behavior:'smooth',block:'center'});
+  }finally{button.disabled=false}
+}
+document.getElementById('loginForm').onsubmit=async(e)=>{
+  e.preventDefault();showNotice('Iniciando sesión...');
+  try{
+    const {error}=await client.auth.signInWithPassword({
+      email:document.getElementById('email').value,
+      password:document.getElementById('password').value
+    });
+    if(error)throw error;
+    document.getElementById('password').value='';
+    await start();
+  }catch(e){showNotice(e.message||'No fue posible iniciar sesión',true)}
+};
+async function start(){
+  const {data:{session}}=await client.auth.getSession();
+  login.classList.toggle('hidden',!!session);
+  workspace.classList.toggle('hidden',!session);
+  if(!session){login.append(notice)}else{workspace.insertBefore(notice,reports);await load()}
+}
+document.getElementById('refresh').onclick=load;
+document.getElementById('logout').onclick=async()=>{
+  await client.auth.signOut();reports.replaceChildren();await start();showNotice('Sesión cerrada');
+};
+if(PUBLIC_KEY.startsWith('PEGAR_AQUI'))showNotice('Configuración pendiente: agregar la clave pública de Supabase.',true);
+else start();
+</script>
+</body>
+</html>
