@@ -35,26 +35,56 @@
 <button id="consultar" type="submit">Consultar seguimiento</button>
 </form>
 <div id="resultado" class="track-message" role="status" aria-live="polite"></div>
-<p class="track-hint">Los estados posibles son: incompleto, pendiente de revisión, aprobado y rechazado. La consulta muestra únicamente el estado, la gravedad y las fechas del reporte; no datos personales.</p>
+<div id="reparacionBox" class="track-message" hidden>
+  <strong id="reparacionEstado"></strong>
+  <p id="reparacionAyuda" class="track-hint"></p>
+  <button id="reparacionAvisar" class="cb-repair-action" type="button" hidden>Avisar que ya fue reparado</button>
+</div>
+<p class="track-hint">Los reportes pueden estar incompletos, pendientes de revisión, aprobados o rechazados. Los avisos de reparación tienen una revisión administrativa independiente. La consulta muestra únicamente el estado, la gravedad y las fechas del reporte; no datos personales.</p>
 </section>
 </main>
 <footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer>
+<script src="reparaciones-ui.js"></script>
 <script>
 (()=>{'use strict';
  const endpoint='https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/portal-servicios';
  const $=id=>document.getElementById(id), out=$('resultado'), btn=$('consultar');
+ const repBox=$('reparacionBox'), repEstado=$('reparacionEstado'), repAyuda=$('reparacionAyuda'), repAvisar=$('reparacionAvisar');
  const estados={incompleto:'Incompleto: faltan fotografías',pendiente:'Pendiente de revisión',aprobado:'Aprobado y publicado',rechazado:'Rechazado'};
  const gravedad={leve:'Tuerce pies (Leve)',moderado:'Tumba bicis (Moderado)',grave:'Cambia pieles (Grave)'};
  function mensaje(text,error=false){out.textContent=text;out.classList.toggle('error',error)}
  function fecha(x){if(!x)return 'No disponible';const d=new Date(x);return isNaN(d.getTime())?'No disponible':d.toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});}
  $('trackForm').addEventListener('submit',async e=>{
-   e.preventDefault();btn.disabled=true;mensaje('Consultando el estado de tu reporte...');
+   e.preventDefault();btn.disabled=true;repBox.hidden=true;repAvisar.hidden=true;mensaje('Consultando el estado de tu reporte...');
    try{
      const folio=$('folio').value.trim().toUpperCase();
      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'seguimiento_bache',folio}),cache:'no-store'});
      const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'No se pudo consultar el reporte');
      const v=j.reporte||{};
      mensaje('Folio: '+(v.folio||folio)+'\nEstado: '+(estados[v.estado]||'Por determinar')+'\nGravedad: '+(gravedad[v.gravedad]||'No especificada')+'\nFecha del reporte: '+fecha(v.creado_en)+'\nÚltima actualización: '+fecha(v.actualizado_en));
+     if(v.estado==='aprobado'){
+       repBox.hidden=false;
+       try {
+         const s=await window.CazaReparacion.consultarEstado(folio);
+         const estado=s.estado_reparacion;
+         repEstado.textContent=estado==='confirmado'?'✓ Reparación verificada por administración':
+           estado==='pendiente'?'Aviso de reparación pendiente de verificación':
+           'Este bache figura como no reparado';
+         repAyuda.textContent=estado==='confirmado'?'La reparación fue confirmada por un administrador.':
+           estado==='pendiente'?'Un administrador está revisando el aviso ciudadano.':
+           'Si ya fue reparado, puedes avisarlo sin crear otro reporte.';
+         repAvisar.hidden=estado==='confirmado'||estado==='pendiente';
+         repAvisar.onclick=()=>window.CazaReparacion.mostrar(folio,()=>{
+           repEstado.textContent='Aviso recibido — pendiente de revisión administrativa';
+           repAvisar.hidden=true;
+           repAyuda.textContent='Tu aviso quedó registrado; no cambia el estado hasta la verificación.';
+         });
+       } catch(err){
+         repEstado.textContent='No se pudo consultar el estado de reparación';
+         repAyuda.textContent='Puedes volver a consultar más tarde.';
+         repAvisar.hidden=true;
+       }
+     }
    }catch(err){mensaje(err.message||'Error de conexión',true)}finally{btn.disabled=false}
  });
 })();

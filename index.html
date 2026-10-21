@@ -52,6 +52,7 @@
 .cb-no-photos{padding:24px;text-align:center;color:#607578}
 @media(max-width:650px){.cb-report-dialog{width:calc(100% - 18px);max-height:calc(100dvh - 18px);border-radius:15px}.cb-dialog-head{padding:12px 15px}.cb-dialog-body{grid-template-columns:1fr;padding:15px;gap:12px;max-height:calc(100dvh - 92px)}.cb-photo-full{max-height:48dvh}}
 </style>
+<style>.cb-repair-public-status{padding:12px;border-radius:10px;background:#e9f5ee;color:#12483d;font:700 14px/1.5 system-ui,sans-serif}.cb-repair-public-status[data-estado="pendiente"]{background:#fff5df;color:#815f1f}.cb-repair-public-status[data-estado="confirmado"]{background:#dbf2e3;color:#12603c}.cb-report-info .cb-repair-action{margin-bottom:20px}</style>
 </head>
 <body class="bx-home cb-home">
 <header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header>
@@ -61,10 +62,13 @@
   <div class="cb-dialog-body"><div id="dialogPhotos" class="cb-dialog-photos"></div><div class="cb-report-info">
     <p id="dialogSeverity" class="cb-severity"></p><p class="cb-legend">Ubicación y descripción</p><p id="dialogDescription"></p>
     <p class="cb-legend">Fecha del reporte</p><p id="dialogDate"></p>
+    <p id="dialogRepairState" class="cb-repair-public-status" role="status"></p>
+    <button id="dialogRepairNotify" class="cb-repair-action" type="button">Avisar que ya fue reparado</button>
     <p style="font-size:13px;color:#647c7e">Reporte ciudadano aprobado, sujeto a revisión previa a su publicación.</p>
   </div></div>
 </dialog>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="reparaciones-ui.js"></script>
 <script>
 (() => {
   'use strict';
@@ -103,6 +107,14 @@
   const dialogDescription = document.getElementById('dialogDescription');
   const dialogDate = document.getElementById('dialogDate');
   const dialogPhotos = document.getElementById('dialogPhotos');
+  const dialogRepairState = document.getElementById('dialogRepairState');
+  const dialogRepairNotify = document.getElementById('dialogRepairNotify');
+  const reparaciones = new Map();
+  function textoReparacion(estado) {
+    if(estado==='confirmado')return '✓ Reparado — verificado por el administrador';
+    if(estado==='pendiente')return 'Aviso de reparación recibido — pendiente de revisión';
+    return 'Este bache todavía figura como no reparado';
+  }
   document.getElementById('dialogClose').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 
@@ -117,6 +129,16 @@
       if (!Number.isNaN(d.valueOf())) fecha = new Intl.DateTimeFormat('es-MX', {day:'2-digit',month:'long',year:'numeric'}).format(d);
     }
     dialogDate.textContent = fecha;
+    const estadoReparacion = reparaciones.get(reporte.folio) || 'sin_aviso';
+    dialogRepairState.dataset.estado = estadoReparacion;
+    dialogRepairState.textContent = textoReparacion(estadoReparacion);
+    dialogRepairNotify.hidden = estadoReparacion === 'pendiente' || estadoReparacion === 'confirmado';
+    dialogRepairNotify.onclick = () => {
+      dialog.close();
+      window.CazaReparacion.mostrar(reporte.folio, () => {
+        reparaciones.set(reporte.folio,'pendiente');
+      });
+    };
     dialogPhotos.replaceChildren();
     const fotos = Array.isArray(reporte.fotografias) ? reporte.fotografias.slice(0,3) : [];
     let validas = 0;
@@ -157,13 +179,20 @@
       if (!respuesta.ok) throw new Error(datos.error || 'No fue posible consultar los reportes');
       if (!Array.isArray(datos.reportes)) throw new Error('Respuesta inesperada del servicio');
 
+      // Un fallo temporal del servicio de reparaciones no debe impedir mostrar los baches.
+      try {
+        const estados = await window.CazaReparacion.listarEstados();
+        reparaciones.clear();
+        for(const e of estados) if(e.folio) reparaciones.set(e.folio,e.estado_reparacion);
+      } catch(e) { console.warn('No se pudieron consultar avisos de reparación',e); }
       const limites = new maplibregl.LngLatBounds();
       let cantidad = 0;
       for (const reporte of datos.reportes) {
         const lat = Number(reporte.latitud);
         const lng = Number(reporte.longitud);
         if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
-        const color = reporte.gravedad === 'grave' ? '#d64545' :
+        const color = reparaciones.get(reporte.folio) === 'confirmado' ? '#29834b' :
+          reporte.gravedad === 'grave' ? '#d64545' :
           reporte.gravedad === 'moderado' ? '#e5a238' : '#14766c';
         const marcador = new maplibregl.Marker({ color })
           .setLngLat([lng, lat])
@@ -173,8 +202,9 @@
         limites.extend([lng, lat]);
         cantidad++;
       }
+      const reparados = [...reparaciones.values()].filter(x=>x==='confirmado').length;
       estado.textContent = cantidad
-        ? `${cantidad} ${cantidad === 1 ? 'bache aprobado disponible' : 'baches aprobados disponibles'}. Haz clic en un marcador para ver los detalles.`
+        ? `${cantidad} ${cantidad === 1 ? 'reporte público' : 'reportes públicos'} en el mapa; ${reparados} con reparación verificada. Haz clic en un marcador para ver los detalles.`
         : 'No hay reportes públicos disponibles por el momento.';
       if (cantidad > 0) map.fitBounds(limites, { padding: 65, maxZoom: 15, duration: 450 });
     } catch (error) {

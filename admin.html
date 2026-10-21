@@ -61,13 +61,20 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 <div class="cb-advanced-heading">
   <h2>Administración avanzada</h2>
   <p class="cb-advanced-intro">Consulta todo el historial, retira publicaciones del mapa y reabre reportes rechazados cuando existan fotografías privadas.</p>
-  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Solicitudes jurídicas</button></div>
+  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Solicitudes jurídicas</button><button id="openRepairs" type="button" class="secondary">Avisos de reparación</button></div>
   <section id="advancedSection" class="cb-advanced-panel hidden" aria-labelledby="advancedTitle">
     <h3 id="advancedTitle">Historial de baches</h3><div id="advancedMsg" class="cb-panel-message" role="status"></div><div id="advancedResults"></div>
   </section>
   <section id="legalSection" class="cb-advanced-panel hidden" aria-labelledby="legalTitle">
     <h3 id="legalTitle">Expedientes jurídicos privados</h3><p class="cb-advanced-intro">Los datos de contacto y documentos son confidenciales. Las ligas de archivos caducan en dos minutos.</p>
     <div id="legalMsg" class="cb-panel-message" role="status"></div><div id="legalResults"></div>
+  </section>
+  <section id="repairsSection" class="cb-advanced-panel hidden" aria-labelledby="repairsTitle">
+    <h3 id="repairsTitle">Avisos de baches reparados</h3>
+    <p class="cb-advanced-intro">Los avisos ciudadanos no cambian el mapa hasta su aprobación. Las fotografías adjuntas son privadas.</p>
+    <button id="refreshRepairs" type="button" class="secondary">Actualizar avisos</button>
+    <div id="repairsMsg" class="cb-panel-message" role="status" aria-live="polite"></div>
+    <div id="repairsResults"></div>
   </section>
 </div>
 </section>
@@ -279,6 +286,87 @@ document.getElementById('openLegal').addEventListener('click',()=>{
  const section=document.getElementById('legalSection');section.classList.toggle('hidden');
  if(!section.classList.contains('hidden'))loadLegal();
 });
+
+
+// Bandeja de reparaciones. Validación de administrador y escrituras solo en la Edge Function.
+const REPAIRS_ENDPOINT=SUPABASE_URL+'/functions/v1/reparaciones-baches';
+async function repairsCall(body){
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session)throw Error('Inicia sesión nuevamente.');
+  const r=await fetch(REPAIRS_ENDPOINT,{method:'POST',headers:{
+    'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,
+    'apikey':PUBLIC_KEY
+  },body:JSON.stringify(body),cache:'no-store'});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(j.error||'No fue posible procesar el aviso (HTTP '+r.status+')');
+  return j;
+}
+function repairsMessage(text,error=false){
+  const el=document.getElementById('repairsMsg');el.textContent=text||'';el.classList.toggle('error',error);
+}
+async function loadRepairs(){
+  const target=document.getElementById('repairsResults');
+  repairsMessage('Consultando avisos...');target.replaceChildren();
+  try {
+    const j=await repairsCall({accion:'listar_admin'});
+    const avisos=Array.isArray(j.avisos)?j.avisos:[];
+    const pendientes=avisos.filter(a=>a.estado==='pendiente');
+    const historial=avisos.filter(a=>a.estado!=='pendiente');
+    target.append(node('h4','',`Pendientes de verificación (${pendientes.length})`));
+    if(!pendientes.length)target.append(node('p','cb-advanced-intro','No hay avisos nuevos.'));
+    for(const a of pendientes)target.append(crearAvisoAdmin(a));
+    target.append(node('h4','cb-advanced-heading',`Historial de reparaciones (${historial.length})`));
+    for(const a of historial)target.append(crearAvisoAdmin(a));
+    repairsMessage('');
+  }catch(e){repairsMessage(e.message||'Error de conexión',true)}
+}
+function crearAvisoAdmin(a){
+  const card=node('article','cb-advanced-record');
+  card.append(node('h4','',a.folio||'Folio no disponible'));
+  const labels={pendiente:'Pendiente de revisión',confirmado:'Reparación confirmada',rechazado:'Aviso rechazado'};
+  card.append(node('span','cb-pill '+(a.estado==='rechazado'?'rechazado':'aprobado'),labels[a.estado]||a.estado));
+  card.append(node('p','cb-advanced-intro','Reportado el '+fechas(a.creado_en)+' · Bache: '+String(a.estado_bache)));
+  card.append(node('p','','Descripción original del bache: '+String(a.descripcion_bache||'Sin descripción')));
+  card.append(node('p','','Comentario del ciudadano: '+String(a.comentario||'No proporcionó comentarios')));
+  if(a.foto_url && a.foto_url.startsWith(SUPABASE_URL+'/storage/v1/object/sign/baches-reparaciones/')){
+    const link=node('a','');link.href=a.foto_url;link.target='_blank';link.rel='noopener noreferrer';
+    const photo=node('img','');photo.src=a.foto_url;photo.alt='Fotografía privada del aviso de reparación';
+    photo.style.cssText='display:block;width:min(100%,420px);max-height:250px;object-fit:contain;border-radius:12px;margin:10px 0;background:#e8f4ed';
+    link.append(photo,node('span','','Abrir fotografía en tamaño completo'));card.append(link);
+  }else{card.append(node('p','cb-advanced-intro','El ciudadano no adjuntó fotografía.'))}
+  if(a.estado==='pendiente'||a.estado==='confirmado'){
+    const nota=node('textarea','cb-legal-note');nota.maxLength=500;
+    nota.placeholder='Motivo del dictamen (nota interna, máximo 500 caracteres)';
+    nota.value=a.nota_administrativa||'';
+    card.append(nota);
+    const actions=node('div','cb-mini-toolbar');
+    function action(decision,texto,estilo){
+      const btn=node('button',estilo,texto);btn.type='button';
+      btn.onclick=async()=>{
+        if(!confirm('¿Confirmas «'+texto+'» para '+a.folio+'?'))return;
+        btn.disabled=true;
+        try{
+          const res=await repairsCall({accion:'resolver_admin',id:a.id,decision,nota:nota.value});
+          await loadRepairs();repairsMessage(res.mensaje||'Dictamen registrado.');
+        }catch(e){repairsMessage(e.message||'No se pudo registrar el dictamen',true);btn.disabled=false;}
+      };return btn;
+    }
+    if(a.estado==='pendiente'){
+      actions.append(action('confirmar','Confirmar reparación','secondary'));
+      actions.append(action('rechazar','Rechazar aviso','danger'));
+    }else{actions.append(action('revertir','Revertir confirmación','danger'))}
+    card.append(actions);
+  }else{
+    card.append(node('p','cb-advanced-intro','Nota del dictamen: '+String(a.nota_administrativa||'Sin nota')));
+  }
+  return card;
+}
+document.getElementById('openRepairs').addEventListener('click',()=>{
+  const section=document.getElementById('repairsSection');
+  section.classList.toggle('hidden');
+  if(!section.classList.contains('hidden'))loadRepairs();
+});
+document.getElementById('refreshRepairs').addEventListener('click',loadRepairs);
 
 </script>
 </body>
