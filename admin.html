@@ -72,7 +72,7 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 <div class="cb-advanced-heading">
   <h2>Administración avanzada</h2>
   <p class="cb-advanced-intro">Consulta todo el historial, retira publicaciones del mapa y reabre reportes rechazados cuando existan fotografías privadas.</p>
-  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Equipo jurídico · Expedientes</button><button id="openRepairs" type="button" class="secondary">Avisos de reparación</button></div>
+  <div class="cb-mini-toolbar"><button id="openAdvanced" aria-expanded="false" aria-controls="advancedSection" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" aria-expanded="false" aria-controls="legalSection" type="button" class="secondary">Equipo jurídico · Expedientes</button><button id="openRepairs" aria-expanded="false" aria-controls="repairsSection" type="button" class="secondary">Avisos de reparación</button></div>
   <section id="advancedSection" class="cb-advanced-panel hidden" aria-labelledby="advancedTitle">
     <h3 id="advancedTitle">Historial de baches</h3><div id="advancedMsg" class="cb-panel-message" role="status"></div><div id="advancedResults"></div>
   </section>
@@ -298,13 +298,28 @@ async function loadLegal(){
   portalMessage('legalMsg','');
  }catch(e){portalMessage('legalMsg',e.message||'No se pudieron cargar los expedientes',true)}
 }
+// Los tres módulos de Administración avanzada se comportan como pestañas excluyentes.
+// La sección activa se puede plegar al pulsar nuevamente su propio botón.
+const seccionesAdministrativas = [
+  ['openAdvanced','advancedSection'],
+  ['openLegal','legalSection'],
+  ['openRepairs','repairsSection']
+];
+function cambiarSeccionAdministrativa(idSeccion) {
+  const seleccionada = document.getElementById(idSeccion);
+  const abrir = seleccionada.classList.contains('hidden');
+  for (const [idBoton,idPanel] of seccionesAdministrativas) {
+    const activa = abrir && idPanel === idSeccion;
+    document.getElementById(idPanel).classList.toggle('hidden',!activa);
+    document.getElementById(idBoton).setAttribute('aria-expanded',String(activa));
+  }
+  return abrir;
+}
 document.getElementById('openAdvanced').addEventListener('click',()=>{
- const section=document.getElementById('advancedSection');section.classList.toggle('hidden');
- if(!section.classList.contains('hidden'))loadAdvanced();
+  if(cambiarSeccionAdministrativa('advancedSection')) loadAdvanced();
 });
 document.getElementById('openLegal').addEventListener('click',()=>{
- const section=document.getElementById('legalSection');section.classList.toggle('hidden');
- if(!section.classList.contains('hidden'))loadLegal();
+  if(cambiarSeccionAdministrativa('legalSection')) loadLegal();
 });
 
 
@@ -395,9 +410,7 @@ function crearAvisoAdmin(a){
   return card;
 }
 document.getElementById('openRepairs').addEventListener('click',()=>{
-  const section=document.getElementById('repairsSection');
-  section.classList.toggle('hidden');
-  if(!section.classList.contains('hidden'))loadRepairs();
+  if(cambiarSeccionAdministrativa('repairsSection')) loadRepairs();
 });
 document.getElementById('refreshRepairs').addEventListener('click',loadRepairs);
 
