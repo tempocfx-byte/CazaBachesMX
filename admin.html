@@ -39,6 +39,17 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 .cb-legal-select,.cb-legal-note{font:inherit;border:1px solid #bfcec8;border-radius:10px;padding:10px;width:100%;max-width:490px}
 .cb-legal-note{min-height:76px;display:block;margin-top:10px}
 .cb-advanced-record button{padding:9px 13px}
+
+/* Historial plegable de avisos de reparación. Cerrado por defecto. */
+.cb-repair-history{margin-top:26px;border-top:1px solid #dce7e3;padding-top:16px}
+.cb-repair-history>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;border-radius:11px;padding:14px 17px;background:#e8f3ee;color:#123e38;font-weight:800;font-size:16px;user-select:none}
+.cb-repair-history>summary::-webkit-details-marker{display:none}
+.cb-repair-history>summary::after{content:'▸';font-size:20px;line-height:1;transition:transform .18s ease}
+.cb-repair-history[open]>summary::after{transform:rotate(90deg)}
+.cb-repair-history>summary:hover{background:#d9ebe3}
+.cb-repair-history>summary:focus-visible{outline:3px solid #14766c;outline-offset:3px}
+.cb-repair-history-content{padding:8px 14px 2px}
+@media(max-width:620px){.cb-repair-history-content{padding:8px 4px 2px}}
 </style>
 </head>
 <body>
@@ -306,6 +317,9 @@ function repairsMessage(text,error=false){
 }
 async function loadRepairs(){
   const target=document.getElementById('repairsResults');
+  // Cuando se actualiza la bandeja, se conserva si el administrador abrió el historial.
+  // En el primer acceso aparece plegado por defecto.
+  const conservarAbierto=Boolean(target.querySelector('details.cb-repair-history[open]'));
   repairsMessage('Consultando avisos...');target.replaceChildren();
   try {
     const j=await repairsCall({accion:'listar_admin'});
@@ -315,8 +329,18 @@ async function loadRepairs(){
     target.append(node('h4','',`Pendientes de verificación (${pendientes.length})`));
     if(!pendientes.length)target.append(node('p','cb-advanced-intro','No hay avisos nuevos.'));
     for(const a of pendientes)target.append(crearAvisoAdmin(a));
-    target.append(node('h4','cb-advanced-heading',`Historial de reparaciones (${historial.length})`));
-    for(const a of historial)target.append(crearAvisoAdmin(a));
+
+    const desplegable=document.createElement('details');
+    desplegable.className='cb-repair-history';
+    desplegable.open=conservarAbierto;
+    const encabezado=document.createElement('summary');
+    encabezado.textContent=`Historial de reparaciones (${historial.length})`;
+    desplegable.append(encabezado);
+    const contenido=node('div','cb-repair-history-content');
+    if(!historial.length)contenido.append(node('p','cb-advanced-intro','Todavía no hay avisos resueltos.'));
+    for(const a of historial)contenido.append(crearAvisoAdmin(a));
+    desplegable.append(contenido);
+    target.append(desplegable);
     repairsMessage('');
   }catch(e){repairsMessage(e.message||'Error de conexión',true)}
 }
