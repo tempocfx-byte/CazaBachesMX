@@ -41,9 +41,9 @@
         <p><strong>Folio:</strong> <span id="cbRepairFolio"></span></p>
         <label for="cbRepairComment">¿Qué observaste? (opcional)</label>
         <textarea id="cbRepairComment" maxlength="500" placeholder="Ej. El pavimento fue reparado esta mañana."></textarea>
-        <label for="cbRepairPhoto">Fotografía actual (opcional)</label>
-        <input id="cbRepairPhoto" type="file" accept="image/jpeg,image/png,image/webp">
-        <p class="cb-repair-tip">Puedes adjuntar una imagen JPG, PNG o WebP de hasta 5 MB. No incluyas rostros, placas ni datos personales.</p>
+        <label for="cbRepairPhoto">Fotografía actual * (obligatoria)</label>
+        <input id="cbRepairPhoto" type="file" required accept="image/jpeg,image/png,image/webp">
+        <p class="cb-repair-tip">Debes adjuntar una fotografía actual JPG, PNG o WebP de hasta 5 MB. No incluyas rostros, placas ni datos personales.</p>
         <label>Verificación de seguridad *</label>
         <div id="cbRepairTurnstile"></div>
         <div id="cbRepairResult" class="cb-repair-result" role="status" aria-live="polite"></div>
@@ -90,7 +90,12 @@
   async function enviar(e) {
     e.preventDefault();if(enviando)return;
     const file=dialog.querySelector('#cbRepairPhoto').files[0];
-    if(file && (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size<1 || file.size>5*1024*1024)){
+    if(!file){
+      mensaje('Adjunta una fotografía actual del bache reparado para enviar el aviso.',true);
+      dialog.querySelector('#cbRepairPhoto').focus();
+      return;
+    }
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size<1 || file.size>5*1024*1024){
       mensaje('La fotografía debe ser JPG, PNG o WebP y pesar máximo 5 MB.',true);return;
     }
     const token=widgetId===null?'':window.turnstile?.getResponse(widgetId);
@@ -99,7 +104,7 @@
     form.append('accion','avisar');form.append('folio',actual);
     form.append('comentario',dialog.querySelector('#cbRepairComment').value.trim());
     form.append('turnstile_token',token);
-    if(file)form.append('imagen',file,file.name);
+    form.append('imagen',file,file.name);
     enviando=true;
     const btn=dialog.querySelector('#cbRepairSend');btn.disabled=true;
     mensaje('Registrando aviso...');
