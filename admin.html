@@ -72,12 +72,12 @@ button:disabled{opacity:.5;cursor:wait}.secondary{background:#d9ede6;color:#1026
 <div class="cb-advanced-heading">
   <h2>Administración avanzada</h2>
   <p class="cb-advanced-intro">Consulta todo el historial, retira publicaciones del mapa y reabre reportes rechazados cuando existan fotografías privadas.</p>
-  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Solicitudes jurídicas</button><button id="openRepairs" type="button" class="secondary">Avisos de reparación</button></div>
+  <div class="cb-mini-toolbar"><button id="openAdvanced" type="button" class="secondary">Ver todos los reportes</button><button id="openLegal" type="button" class="secondary">Equipo jurídico · Expedientes</button><button id="openRepairs" type="button" class="secondary">Avisos de reparación</button></div>
   <section id="advancedSection" class="cb-advanced-panel hidden" aria-labelledby="advancedTitle">
     <h3 id="advancedTitle">Historial de baches</h3><div id="advancedMsg" class="cb-panel-message" role="status"></div><div id="advancedResults"></div>
   </section>
   <section id="legalSection" class="cb-advanced-panel hidden" aria-labelledby="legalTitle">
-    <h3 id="legalTitle">Expedientes jurídicos privados</h3><p class="cb-advanced-intro">Los datos de contacto y documentos son confidenciales. Las ligas de archivos caducan en dos minutos.</p>
+    <h3 id="legalTitle">Equipo jurídico · Expedientes privados</h3><p class="cb-advanced-intro">Gestión exclusiva del equipo autorizado. Revisa fotografías por categoría, videos y comprobantes privados. Los enlaces de archivos caducan en dos minutos.</p>
     <div id="legalMsg" class="cb-panel-message" role="status"></div><div id="legalResults"></div>
   </section>
   <section id="repairsSection" class="cb-advanced-panel hidden" aria-labelledby="repairsTitle">
@@ -266,9 +266,18 @@ async function loadLegal(){
    box.append(node('p','',d.descripcion||'Sin descripción'));
    if(d.folio_bache)box.append(node('p','cb-advanced-intro','Folio relacionado: '+d.folio_bache));
    const links=node('div','cb-doc-links');
-   for(const file of exp.archivos||[]){
+   const categorias={fotos_bache:'Fotografía del bache',fotos_danos:'Fotografía de los daños',
+     foto_panoramica:'Fotografía panorámica',video:'Video (opcional)',
+     documentos:'Comprobante / documento',fotos:'Fotografía (expediente anterior)'};
+   const archivos=Array.isArray(exp.archivos)?exp.archivos:[];
+   links.append(node('p','cb-advanced-intro','Evidencias privadas ('+archivos.length+'):'));
+   for(const file of archivos){
      if(typeof file.url!=='string'||!file.url.startsWith(SUPABASE_URL+'/storage/v1/object/sign/juridico-privado/'))continue;
-     const a=node('a','',file.nombre||'Adjunto');a.href=file.url;a.target='_blank';a.rel='noopener noreferrer';links.append(a);
+     const etiqueta=categorias[file.categoria]||'Adjunto';
+     const a=node('a','','Abrir '+etiqueta+' · '+String(file.nombre||'Archivo'));
+     a.href=file.url;a.target='_blank';a.rel='noopener noreferrer';
+     a.style.cssText='display:block;margin:7px 0;overflow-wrap:anywhere';
+     links.append(a);
    }
    box.append(links);
    const select=node('select','cb-legal-select');select.setAttribute('aria-label','Estado de '+exp.folio);
