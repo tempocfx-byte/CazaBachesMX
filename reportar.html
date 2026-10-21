@@ -89,15 +89,13 @@ async function enviarReporte(files,token){
    message('ATENCIÓN: El envío no se completó porque falló la carga de fotografías.\n'+
     'Fotografías guardadas: '+subidas+' de '+files.length+'.\n'+
     'Folio del registro creado: '+(j.folio||'No disponible')+'\n'+
-    'Clave de seguimiento: '+(j.clave_seguimiento||'No disponible')+'\n'+
     'Errores: '+errores.join('; ')+'\n'+
-    'No vuelvas a enviar el formulario: se podría crear un reporte duplicado. Conserva estos datos y solicita ayuda para completar las evidencias.',true);
+    'No vuelvas a enviar el formulario: se podría crear un reporte duplicado. Conserva el folio y solicita ayuda para completar las evidencias.',true);
    boton.textContent='Envío incompleto';
    boton.dataset.bloqueado='1';
   }else{
    message('Reporte y fotografías recibidos correctamente.\nFolio: '+j.folio+
-    '\nClave de seguimiento: '+j.clave_seguimiento+
-    '\nFotografías guardadas: '+subidas+'\nEstado: pendiente de revisión.\nGuarda el folio y la clave: la clave no podrá recuperarse después.');
+    '\nFotografías guardadas: '+subidas+'\nEstado: pendiente de revisión.\nGuarda tu folio para consultar el estado del bache.');
    boton.textContent='Reporte enviado';
    boton.dataset.bloqueado='1';
   }

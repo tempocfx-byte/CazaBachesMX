@@ -25,18 +25,17 @@
 <body class="bx-home">
 <header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header>
 <main>
-<div class="page-intro"><h1>Seguimiento a bache</h1><p>Consulta de manera privada el estado de tu reporte ciudadano.</p></div>
+<div class="page-intro"><h1>Seguimiento a bache</h1><p>Consulta el estado de tu reporte ciudadano únicamente con su folio.</p></div>
 <nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂ Mapa</a><a href="reportar.html">＋ Reportar bache</a><a href="juridico.html">⚖ Orientación jurídica</a><a aria-current="page" href="seguimiento.html">◷ Seguimiento</a></nav>
 <section class="bx-mapbox">
 <h2>Consultar estado de un reporte</h2>
-<p class="track-hint">Necesitas el folio <strong>CBMX-...</strong> y la clave privada que recibiste cuando enviaste el reporte. Esta clave no se puede recuperar.</p>
+<p class="track-hint">Solo necesitas el folio <strong>CBMX-...</strong> que recibiste al reportar el bache. No hace falta iniciar sesión ni recordar una contraseña.</p>
 <form id="trackForm" class="track-form">
 <label for="folio">Folio del bache</label><input id="folio" required maxlength="40" autocomplete="off" placeholder="CBMX-XXXXXXXXXXXX">
-<label for="clave">Clave de seguimiento</label><input id="clave" required maxlength="100" autocomplete="off" type="password" placeholder="Clave privada del reporte">
 <button id="consultar" type="submit">Consultar seguimiento</button>
 </form>
 <div id="resultado" class="track-message" role="status" aria-live="polite"></div>
-<p class="track-hint">Los estados posibles son: incompleto, pendiente de revisión, aprobado y rechazado. Este servicio no publica tu clave ni tus datos de acceso.</p>
+<p class="track-hint">Los estados posibles son: incompleto, pendiente de revisión, aprobado y rechazado. La consulta muestra únicamente el estado, la gravedad y las fechas del reporte; no datos personales.</p>
 </section>
 </main>
 <footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer>
@@ -51,8 +50,8 @@
  $('trackForm').addEventListener('submit',async e=>{
    e.preventDefault();btn.disabled=true;mensaje('Consultando el estado de tu reporte...');
    try{
-     const folio=$('folio').value.trim().toUpperCase(),clave=$('clave').value.trim();
-     const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'seguimiento_bache',folio,clave}),cache:'no-store'});
+     const folio=$('folio').value.trim().toUpperCase();
+     const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'seguimiento_bache',folio}),cache:'no-store'});
      const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'No se pudo consultar el reporte');
      const v=j.reporte||{};
      mensaje('Folio: '+(v.folio||folio)+'\nEstado: '+(estados[v.estado]||'Por determinar')+'\nGravedad: '+(gravedad[v.gravedad]||'No especificada')+'\nFecha del reporte: '+fecha(v.creado_en)+'\nÚltima actualización: '+fecha(v.actualizado_en));
