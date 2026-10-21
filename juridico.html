@@ -66,11 +66,50 @@ function render(){
  $('submit').classList.toggle('hidden',step!==3);
  if(step===3)renderCaptcha();
 }
-function validateStep(){
- const fields=[...$('step'+step).querySelectorAll('input[required],select[required],textarea[required]')];
- for(const el of fields)if(!el.reportValidity())return false;
- if(step===2 && $('fecha').value>new Date().toISOString().slice(0,10)){
-  alert('La fecha del incidente no puede ser futura.');return false;
+// Los pasos ocultos se validan expresamente para evitar rechazos tardíos.
+// Las mismas reglas de longitud del servidor se comprueban antes de subir archivos.
+$('caseForm').noValidate = true;
+for(const campo of $('caseForm').querySelectorAll('input,select,textarea')){
+ campo.addEventListener('input',()=>campo.setCustomValidity(''));
+ campo.addEventListener('change',()=>campo.setCustomValidity(''));
+}
+function validarCampo(paso,id,mensaje){
+ if(step!==paso){step=paso;render();}
+ const campo=$(id);
+ campo.setCustomValidity(mensaje);
+ campo.focus();
+ campo.reportValidity();
+ return false;
+}
+function validateStep(paso=step){
+ // Se muestra primero el paso que se va a validar; los controles ocultos no son enfocables.
+ if(step!==paso){step=paso;render();}
+ const obligatorios=[...$('step'+paso).querySelectorAll('input[required],select[required],textarea[required]')];
+ for(const campo of obligatorios){
+  if(!campo.checkValidity()){
+   campo.focus();campo.reportValidity();return false;
+  }
+ }
+ const valor=id=>$(id).value.trim();
+ if(paso===1){
+  if(valor('nombre').length<4)return validarCampo(1,'nombre','Escribe tu nombre completo (mínimo 4 caracteres).');
+  if(valor('telefono').length<7)return validarCampo(1,'telefono','Escribe un teléfono de al menos 7 caracteres.');
+  if(!/^\S+@\S+\.\S+$/.test(valor('correo')))
+   return validarCampo(1,'correo','Introduce una dirección de correo válida.');
+  if(!['Teléfono','Correo electrónico','WhatsApp'].includes(valor('medio')))
+   return validarCampo(1,'medio','Selecciona un medio de contacto.');
+ }
+ if(paso===2){
+  if(valor('fecha')>new Date().toISOString().slice(0,10))
+   return validarCampo(2,'fecha','La fecha del incidente no puede ser futura.');
+  if(valor('calle').length<3)return validarCampo(2,'calle','Indica una calle o avenida (mínimo 3 caracteres).');
+  if(valor('colonia').length<2)return validarCampo(2,'colonia','Indica una colonia o referencia (mínimo 2 caracteres).');
+  if(!['Neumático o rin','Suspensión','Carrocería','Otros daños materiales','Lesiones personales','Varias afectaciones'].includes(valor('tipo')))
+   return validarCampo(2,'tipo','Selecciona el tipo de afectación.');
+  if(valor('descripcion').length<20)
+   return validarCampo(2,'descripcion','Describe lo ocurrido y los daños con al menos 20 caracteres.');
+  if(valor('bache')&&!/^CBMX-[A-F0-9]{12}$/i.test(valor('bache')))
+   return validarCampo(2,'bache','El folio opcional del bache debe tener el formato CBMX-XXXXXXXXXXXX.');
  }
  return true;
 }
@@ -91,7 +130,10 @@ for (const [id,info] of [
 }
 function show(el,text,error=false){el.classList.remove('hidden');el.classList.toggle('success',!error);el.classList.toggle('error',error);el.textContent=text;el.scrollIntoView({behavior:'smooth',block:'center'});}
 $('caseForm').addEventListener('submit',async e=>{
- e.preventDefault();if(enviando||!validateStep())return;
+ e.preventDefault();
+ if(enviando)return;
+ // Validar todos los pasos, incluso los que ahora están ocultos.
+ for(const paso of [1,2,3])if(!validateStep(paso))return;
  const bache=[...$('fotoBache').files];
  const danos=[...$('fotoDanos').files];
  const panorama=[...$('fotoPanoramica').files];
