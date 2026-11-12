@@ -11,7 +11,7 @@
 .cb-home .hero{margin-bottom:0!important}
 .cb-home main{padding-top:25px!important}
 @media(max-width:620px){.cb-header{padding:0 18px}.cb-nav{display:grid;grid-template-columns:1fr;gap:8px}.cb-nav a{width:100%}}
-</style><link href="style.css" rel="stylesheet"/><link href="premium.css" rel="stylesheet"/><style>
+</style><link href="../style.css" rel="stylesheet"/><link href="../premium.css" rel="stylesheet"/><style>
 #pdfControls{margin-top:14px;padding:16px;background:#eff8f3;border:1px solid #bfdccf;border-radius:12px}
 #pdfControls button{background:#103b43;color:#fff}
 #pdfStatus{margin:10px 0 0;white-space:pre-wrap}
@@ -27,26 +27,57 @@
 .cb-escrito-footer .check{margin-bottom:0}
 .cb-escrito-form label{font-weight:650}
 @media(max-width:640px){.cb-modo-tabs{display:grid;grid-template-columns:1fr}.cb-modo-tabs button{min-width:0}}
-</style></head><body><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>¿Sufriste daños por un bache?</h1><p>Elige entre descargar un escrito generado inmediatamente con tus datos o solicitar la revisión gratuita de tu caso por nuestro equipo jurídico.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂  Inicio</a><a href="reportar.html">＋  Reportar bache</a><a aria-current="page" href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><div class="alert"><strong>Dos opciones:</strong> la descarga inmediata produce un escrito automático sin revisión ni registro de expediente; la revisión por el equipo jurídico permite enviar una solicitud privada y darle seguimiento. <strong>Ninguna opción presenta por sí misma una reclamación ante una autoridad ni suspende plazos legales.</strong> Consulta el <a href="aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a>.</div><nav class="tabs cb-modo-tabs" aria-label="Modalidad de orientación jurídica">
+</style><script src="pdf.js"></script><script>(() => {
+  'use strict';
+  const originalFetch = window.fetch.bind(window);
+  const endpoint = '/functions/v1/tienda-escritos';
+  const key = id => 'cbmx_vista_previa_pedido_'+id;
+  const responseJSON = (data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
+  const sampleUUID=()=>crypto.randomUUID();
+  const randomHex=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
+  window.fetch = async (resource, init = {}) => {
+    const u = typeof resource==='string'? resource : (resource?.url||'');
+    if(!u.includes(endpoint))return originalFetch(resource,init);
+    const b=JSON.parse(init.body || '{}');
+    if(b.accion==='crear') {
+      if(!b.datos?.nombre||!b.datos?.descripcion)return responseJSON({error:'Completa la información de tu reclamación.'},400);
+      const pedido=sampleUUID(),clave=randomHex();
+      localStorage.setItem(key(pedido),JSON.stringify({pedido,clave,datos:b.datos,aprobado:false,fecha:new Date().toISOString()}));
+      const checkout_url=new URL('checkout.html?compra='+encodeURIComponent(pedido),location.href).href;
+      return responseJSON({pedido,clave,checkout_url,importe:50,moneda:'MXN'});
+    }
+    if(b.accion==='estado'||b.accion==='descargar') {
+      const item=localStorage.getItem(key(b.pedido));
+      const p=item && JSON.parse(item);
+      if(!p||p.clave!==b.clave)return responseJSON({error:'Compra no encontrada.'},403);
+      if(b.accion==='estado')return responseJSON({estado:p.aprobado?'aprobado':'pendiente'});
+      if(!p.aprobado)return responseJSON({error:'No se ha confirmado el pago.'},402);
+      if(typeof window.cbmxPreviewPDF!=='function')return responseJSON({error:'No se pudo generar el documento.'},500);
+      const pdf=window.cbmxPreviewPDF(p.datos);
+      return new Response(pdf,{status:200,headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="Reclamacion_responsabilidad_patrimonial.pdf"'}});
+    }
+    return responseJSON({error:'Acción no reconocida.'},400);
+  };
+})();</script></head><body><header class="cb-header"><a class="cb-brand" href="../index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>¿Sufriste daños por un bache?</h1><p>Elige entre comprar por $50 MXN un escrito automático y descargarlo después del pago, o solicitar una cotización de revisión jurídica con un prestador externo.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a href="../index.html">⌂  Inicio</a><a href="../reportar.html">＋  Reportar bache</a><a aria-current="page" href="juridico.html">⚖  Orientación jurídica</a><a href="../seguimiento.html">◷  Seguimiento</a></nav><div class="alert"><strong>Dos opciones:</strong> la descarga del escrito automático cuesta $50.00 MXN y requiere pago aprobado; la revisión jurídica se solicita a un prestador externo que determina su cotización; enviar el formulario no implica contratarlo ni aceptar un precio. <strong>Ninguna opción presenta por sí misma una reclamación ante una autoridad ni suspende plazos legales.</strong> Consulta el <a href="../aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a>.</div><nav class="tabs cb-modo-tabs" aria-label="Modalidad de orientación jurídica">
   <button class="active" type="button" data-cb-modo="inmediato" aria-pressed="true">
-    Descarga inmediata <span class="cb-modo-caption">Escrito PDF generado con tus respuestas</span>
+    Descarga inmediata · $50 MXN <span class="cb-modo-caption">Reclamación patrimonial basada en Ley 602, disponible tras el pago</span>
   </button>
   <button type="button" data-cb-modo="revision" aria-pressed="false">
-    Revisión por el equipo jurídico <span class="cb-modo-caption">Envía tu solicitud y da seguimiento privado</span>
+    Revisión por equipo jurídico externo <span class="cb-modo-caption">Solicita cotización y da seguimiento privado; sin precio fijo</span>
   </button>
 </nav>
 <section class="panel" id="cbEscritoInmediato" aria-label="Descarga inmediata de escrito">
-  <h2>Genera tu escrito en PDF</h2>
-  <div class="alert cb-escrito-aviso"><strong>Documento generado automáticamente:</strong> el contenido se construye exclusivamente con la información que ingreses. <strong>No fue revisado, firmado ni validado por el equipo jurídico de CazaBachesMX.</strong> No es un oficio expedido por una autoridad, no acredita su presentación y no interrumpe plazos legales. Debes verificar los datos y presentar el documento ante la autoridad competente si decides utilizarlo.</div>
-  <p class="hint">Este formulario se procesa en tu navegador: <strong>los datos que escribas aquí no se envían a CazaBachesMX ni crean un expediente</strong>. Si necesitas que el equipo jurídico revise las evidencias, utiliza la otra modalidad. El PDF no incluye fotografías; podrás adjuntar las pruebas pertinentes cuando presentes el escrito.</p>
+  <h2>Genera tu reclamación patrimonial en PDF · $50.00 MXN</h2>
+  <div class="alert cb-escrito-aviso"><strong>Documento generado automáticamente:</strong> el contenido se construye exclusivamente con la información que ingreses. <strong>No fue revisado, firmado ni validado por el equipo jurídico de CazaBachesMX.</strong> Es un proyecto de reclamación por responsabilidad patrimonial conforme a la Ley número 602 de Veracruz. No es un oficio expedido por una autoridad, no acredita su presentación y no interrumpe plazos legales. Debes verificar los datos y presentar el documento ante la autoridad competente si decides utilizarlo.</div>
+  <p class="hint">Los datos proporcionados se enviarán de forma privada a CazaBachesMX para preparar la compra y generar el escrito, y Mercado Pago procesará el pago. <strong>No se abre un expediente de revisión jurídica ni se reciben fotografías en esta modalidad.</strong> Tras confirmar el pago de $50.00 MXN podrás descargar la reclamación. No se adjuntan archivos en esta compra: deberás acompañar personalmente las pruebas ofrecidas cuando presentes el escrito. La generación automática no comprueba que la autoridad seleccionada sea competente ni que la reclamación se presente dentro del plazo legal. Consulta el <a href="../aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a>.</p>
   <form id="cbEscritoForm" class="cb-escrito-form">
     <div class="grid">
       <div class="field"><label for="cbEsNombre">Nombre completo *</label><input id="cbEsNombre" autocomplete="name" maxlength="120" minlength="4" required></div>
-      <div class="field"><label for="cbEsCorreo">Correo para recibir notificaciones (opcional)</label><input id="cbEsCorreo" type="email" autocomplete="email" maxlength="150"></div>
-      <div class="field"><label for="cbEsDomicilio">Domicilio para notificaciones (opcional)</label><input id="cbEsDomicilio" maxlength="220" placeholder="Calle, número, colonia y municipio"></div>
+      <div class="field"><label for="cbEsCorreo">Correo electrónico *</label><input id="cbEsCorreo" type="email" autocomplete="email" maxlength="150" required></div>
+      <div class="field"><label for="cbEsDomicilio">Domicilio para recibir notificaciones *</label><input id="cbEsDomicilio" maxlength="220" required placeholder="Calle, número, colonia y municipio"></div>
       <div class="field"><label for="cbEsMunicipio">Municipio y estado *</label><input id="cbEsMunicipio" maxlength="120" value="Xalapa, Veracruz" required></div>
     </div>
-    <div class="field"><label for="cbEsAutoridad">Autoridad a la que dirigirás el escrito *</label><input id="cbEsAutoridad" maxlength="180" value="Autoridad municipal competente" required><p class="hint">Verifica el nombre exacto del destinatario antes de presentar el documento.</p></div>
+    <div class="field"><label for="cbEsAutoridad">Autoridad presuntamente responsable *</label><select id="cbEsAutoridad" required><option value="">Selecciona la dependencia</option><option value="La Secretaría de Infraestructura y Obras Públicas del Estado de Veracruz">La Secretaría de Infraestructura y Obras Públicas del Estado de Veracruz</option><option value="Dirección de Obras Publicas del Ayuntamiento de Xalapa, Veracruz">Dirección de Obras Publicas del Ayuntamiento de Xalapa, Veracruz</option></select><p class="hint">La elección corresponde al ciudadano. La competencia depende de la titularidad y mantenimiento de la vía (artículos 15 y 20, Ley 602).</p></div>
     <h3>Información del incidente</h3>
     <div class="grid">
       <div class="field"><label for="cbEsFecha">Fecha del incidente *</label><input id="cbEsFecha" type="date" required></div>
@@ -54,16 +85,27 @@
       <div class="field"><label for="cbEsCalle">Calle o avenida *</label><input id="cbEsCalle" maxlength="150" required></div>
       <div class="field"><label for="cbEsColonia">Colonia o referencia *</label><input id="cbEsColonia" maxlength="150" required></div>
     </div>
-    <div class="field"><label for="cbEsDescripcion">Describe lo ocurrido y los daños materiales *</label><textarea id="cbEsDescripcion" minlength="20" maxlength="4000" placeholder="Explica qué ocurrió, dónde estaba el bache y qué daños materiales observaste. No incluyas datos médicos ni información de terceros." required></textarea></div>
-    <div class="cb-escrito-footer">
-      <label class="check"><input id="cbEsAcepta" type="checkbox" required><span>Entiendo que el escrito es una <strong>versión generada automáticamente a partir de mis respuestas</strong>, sin revisión jurídica, firma ni presentación ante autoridad. Revisaré su contenido antes de utilizarlo.</span></label>
+    <div class="grid">
+      <div class="field"><label for="cbEsHora">Hora aproximada del incidente (opcional)</label><input id="cbEsHora" type="time"></div>
+      <div class="field"><label for="cbEsBien">Bien material afectado *</label><input id="cbEsBien" maxlength="180" placeholder="Ej. vehículo, rin, llanta, suspensión" required></div>
+      <div class="field"><label for="cbEsMonto">Importe reclamado (MXN) *</label><input id="cbEsMonto" type="number" inputmode="decimal" min="0.01" step="0.01" max="10000000" placeholder="Ej. 3500.00" required><p class="hint">Importe estimado con facturas, presupuestos u otra documentación de respaldo. No se calcula automáticamente una indemnización.</p></div>
+      <div class="field"><label for="cbEsEvidencias">Pruebas que puedes ofrecer *</label><select id="cbEsEvidencias" required><option value="">Selecciona la evidencia principal</option><option value="Fotografías del bache y del daño material">Fotografías del bache y del daño material</option><option value="Comprobantes de reparación o presupuesto">Comprobantes de reparación o presupuesto</option><option value="Fotografías y comprobantes de reparación o presupuesto">Fotografías y comprobantes</option><option value="Otras pruebas documentales o testimoniales">Otras pruebas documentales o testimoniales</option></select></div>
     </div>
-    <div class="actions"><button type="submit">Descargar escrito PDF</button></div>
-    <div id="cbEscritoResultado" role="status" aria-live="polite" class="hidden"></div>
+    <div class="field"><label for="cbEsDescripcion">Hechos: ¿cómo ocurrió el incidente? *</label><textarea id="cbEsDescripcion" minlength="30" maxlength="4000" placeholder="Explica la fecha, el lugar, la condición del bache, qué sucedió y los daños materiales. No incluyas datos médicos." required></textarea></div>
+    <div class="field"><label for="cbEsCausalidad">Relación causal entre el estado de la vía y el daño *</label><textarea id="cbEsCausalidad" minlength="20" maxlength="1800" placeholder="Explica por qué consideras que el daño se produjo directamente por el bache; identifica las circunstancias que lo vinculan con el incidente." required></textarea></div>
+    <div class="field"><label for="cbEsDetallePruebas">Identificación específica de las pruebas *</label><textarea id="cbEsDetallePruebas" minlength="12" maxlength="1600" placeholder="Ej. tres fotografías tomadas el día del incidente y cotización del taller de fecha ... Deberás anexarlas al presentar el escrito." required></textarea></div>
+    <p class="hint"><strong>Fundamento normativo:</strong> Ley número 602 de Responsabilidad Patrimonial de la Administración Pública Estatal y Municipal de Veracruz, artículos 1, 2, 4, 14, 15, 16, 17 y 24, y Código de Procedimientos Administrativos de Veracruz, artículo 139. <a href="https://www.legisver.gob.mx/leyes/LeyesPDF/RESPONSABILIDADPATRIMONIAL20122022.pdf" target="_blank" rel="noopener noreferrer">Consultar la ley</a>.</p>
+    <div class="alert"><strong>Prescripción:</strong> para daños materiales, el artículo 24 señala como regla general un año desde la lesión o el cese de sus efectos continuos. Esta plataforma no verifica excepciones ni determina si el plazo está vigente. Si el incidente es antiguo o hay dudas sobre la competencia o causalidad, solicita cotización de revisión jurídica antes de pagar.</div>
+    <div class="cb-escrito-footer">
+      <label class="check"><input id="cbEsAcepta" type="checkbox" required><span>Entiendo que se generará automáticamente una <strong>reclamación patrimonial basada en la Ley 602</strong> con los datos que proporciono, sin revisión jurídica, firma ni presentación. Reconozco que debo anexar mis pruebas, revisar la competencia de la autoridad y los plazos legales. Acepto pagar <strong>$50.00 MXN por un escrito</strong>.</span></label>
+    </div>
+    <div class="field"><label class="check"><input id="cbEsPrivacidad" type="checkbox" required><span>Leí el <a href="../aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a> y acepto proporcionar mis datos para procesar esta compra y entregar el documento.</span></label></div>
+    <div class="actions"><button type="submit">Pagar $50.00 MXN y obtener escrito</button></div>
+    <div id="cbEscritoResultado" role="status" aria-live="polite" class="hidden"></div><div id="cbPagoResultado" class="hidden alert" role="status" aria-live="polite"></div><div id="cbPagoAcciones" class="hidden actions"><button type="button" id="cbConsultarPago">Consultar estado de pago</button><button type="button" id="cbDescargarPago" class="hidden">Descargar reclamación pagada en PDF</button></div>
   </form>
 </section>
 <div id="cbRevisionArea" class="hidden">
-<nav class="tabs"><button class="active" data-tab="solicitud">Nueva solicitud</button><button data-tab="consulta">Consultar expediente</button></nav><section class="panel" id="solicitud"><h2>Solicitud de orientación jurídica</h2><div class="step" id="stepLabel">Paso 1 de 3 · Datos de contacto</div><form id="caseForm"><div id="step1"><div class="grid"><div class="field"><label for="nombre">Nombre completo *</label><input autocomplete="name" id="nombre" maxlength="120" required=""/></div><div class="field"><label for="telefono">Teléfono *</label><input autocomplete="tel" id="telefono" maxlength="20" required="" type="tel"/></div><div class="field"><label for="correo">Correo electrónico *</label><input autocomplete="email" id="correo" required="" type="email"/></div><div class="field"><label for="medio">Medio de contacto preferido *</label><select id="medio" required=""><option value="">Seleccionar</option><option>Teléfono</option><option>Correo electrónico</option><option>WhatsApp</option></select></div></div><p class="hint">Los datos de contacto se almacenan en una tabla privada; el acceso del equipo requiere autenticación.</p></div><div class="hidden" id="step2"><div class="grid"><div class="field"><label for="fecha">Fecha del incidente *</label><input id="fecha" required="" type="date"/></div><div class="field"><label for="hora">Hora aproximada</label><input id="hora" type="time"/></div><div class="field"><label for="calle">Calle o avenida *</label><input id="calle" maxlength="150" required=""/></div><div class="field"><label for="colonia">Colonia o referencia *</label><input id="colonia" maxlength="150" required=""/></div></div><div class="field"><label for="tipo">Tipo de afectación *</label><select id="tipo" required=""><option value="">Seleccionar</option><option>Neumático o rin</option><option>Suspensión</option><option>Carrocería</option><option>Otros daños materiales</option><option>Lesiones personales</option><option>Varias afectaciones</option></select></div><div class="field"><label for="descripcion">¿Qué ocurrió y qué daños sufriste? *</label><textarea id="descripcion" maxlength="4000" placeholder="Describe los hechos sin incluir datos médicos innecesarios" required=""></textarea></div><div class="field"><label for="bache">Folio de bache existente (opcional)</label><input id="bache" placeholder="Ej. CBMX-E280BF2EBCAB"/></div></div><div class="hidden" id="step3">
+<nav class="tabs"><button class="active" data-tab="solicitud">Nueva solicitud</button><button data-tab="consulta">Consultar expediente</button></nav><section class="panel" id="solicitud"><h2>Solicitud de orientación jurídica</h2><div class="step" id="stepLabel">Paso 1 de 3 · Datos de contacto</div><form id="caseForm"><div id="step1"><div class="grid"><div class="field"><label for="nombre">Nombre completo *</label><input autocomplete="name" id="nombre" maxlength="120" required=""/></div><div class="field"><label for="telefono">Teléfono *</label><input autocomplete="tel" id="telefono" maxlength="20" required="" type="tel"/></div><div class="field"><label for="correo">Correo electrónico *</label><input autocomplete="email" id="correo" required="" type="email"/></div><div class="field"><label for="medio">Medio de contacto preferido *</label><select id="medio" required=""><option value="">Seleccionar</option><option>Teléfono</option><option>Correo electrónico</option><option>WhatsApp</option></select></div></div><p class="hint">Los datos de contacto se almacenan en un expediente privado. La cotización del prestador externo se comunicará posteriormente, antes de cualquier contratación.</p></div><div class="hidden" id="step2"><div class="grid"><div class="field"><label for="fecha">Fecha del incidente *</label><input id="fecha" required="" type="date"/></div><div class="field"><label for="hora">Hora aproximada</label><input id="hora" type="time"/></div><div class="field"><label for="calle">Calle o avenida *</label><input id="calle" maxlength="150" required=""/></div><div class="field"><label for="colonia">Colonia o referencia *</label><input id="colonia" maxlength="150" required=""/></div></div><div class="field"><label for="tipo">Tipo de afectación *</label><select id="tipo" required=""><option value="">Seleccionar</option><option>Neumático o rin</option><option>Suspensión</option><option>Carrocería</option><option>Otros daños materiales</option><option>Lesiones personales</option><option>Varias afectaciones</option></select></div><div class="field"><label for="descripcion">¿Qué ocurrió y qué daños sufriste? *</label><textarea id="descripcion" maxlength="4000" placeholder="Describe los hechos sin incluir datos médicos innecesarios" required=""></textarea></div><div class="field"><label for="bache">Folio de bache existente (opcional)</label><input id="bache" placeholder="Ej. CBMX-E280BF2EBCAB"/></div></div><div class="hidden" id="step3">
   <p class="hint">Adjunta imágenes actuales y relacionadas con el mismo incidente. <strong>Las tres categorías fotográficas son obligatorias.</strong> Evita rostros, placas, identificaciones y datos sensibles de terceros.</p>
   <div class="field"><label for="fotoBache">1. Fotografías del bache * (de 1 a 3)</label>
     <input accept="image/jpeg,image/png,image/webp" id="fotoBache" type="file" multiple required>
@@ -86,13 +128,13 @@
     <p class="file-list" id="infoDocumentos">Ningún documento seleccionado.</p>
   </div>
   <p class="hint">Cada fotografía o documento puede pesar hasta 5 MB. El conjunto de archivos, incluido el video opcional, no debe superar 17 MB.</p>
-  <div class="alert">No adjuntes identificaciones ni expedientes médicos en estas pruebas. Los archivos se almacenan de forma privada; su consulta requiere permisos autorizados.</div>
-  <div class="field"><label class="check"><input id="privacidad" required="" type="checkbox"/><span>Confirmo que consulté el <a href="aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a> y estoy de acuerdo con enviar mi información para revisar esta solicitud.</span></label></div><div class="field"><label class="check"><input id="informado" required="" type="checkbox"/><span>Entiendo que la revisión inicial es gratuita, no garantiza una indemnización y no equivale a presentar una reclamación ante una autoridad.</span></label></div></div><div class="field"><label>Verificación de seguridad *</label><div id="juridicoCaptcha" data-sitekey="0x4AAAAAAFeFVfO7fFUm1cEw"></div><p class="muted">Protección contra envíos automatizados mediante Cloudflare Turnstile.</p></div><div class="actions"><button class="secondary hidden" id="back" type="button">Anterior</button><button id="next" type="button">Continuar</button><button class="hidden" id="submit" type="submit">Enviar solicitud de orientación jurídica</button></div></form><div class="hidden alert success" id="result" role="status"></div>
+  <div class="alert">No adjuntes identificaciones ni datos o expedientes médicos. Los archivos se almacenan en un expediente privado y su consulta requiere autorización.</div>
+  <div class="field"><label class="check"><input id="privacidad" required="" type="checkbox"/><span>Confirmo que consulté el <a href="../aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a> y estoy de acuerdo con enviar mi información para revisar esta solicitud.</span></label></div><div class="field"><label class="check"><input id="informado" required="" type="checkbox"/><span>Entiendo que el servicio jurídico es prestado por un tercero, quien comunicará su precio antes de la contratación. Enviar la solicitud no supone aceptar una cotización, no garantiza indemnización y no equivale a presentar una reclamación ante una autoridad.</span></label></div></div><div class="field"><label>Verificación de seguridad *</label><div id="juridicoCaptcha" data-sitekey="0x4AAAAAAFeFVfO7fFUm1cEw"></div><p class="muted">Protección contra envíos automatizados mediante Cloudflare Turnstile.</p></div><div class="actions"><button class="secondary hidden" id="back" type="button">Anterior</button><button id="next" type="button">Continuar</button><button class="hidden" id="submit" type="submit">Enviar solicitud de orientación jurídica</button></div></form><div class="hidden alert success" id="result" role="status"></div>
 <div id="pdfControls" class="hidden" role="region" aria-label="Comprobante de registro">
   <button id="downloadPdf" type="button">Descargar nuevamente el comprobante PDF</button>
   <p id="pdfStatus" class="hint" role="status" aria-live="polite"></p>
   <p class="hint">El PDF contiene tu folio y clave privada. No lo compartas y guárdalo en un dispositivo seguro.</p>
-</div></section><section class="panel hidden" id="consulta"><h2>Consultar expediente privado</h2><p class="muted">Necesitas el folio CBJ-... y la clave privada que se entrega al crear la solicitud. No podremos recuperar tu clave si la pierdes.</p><form id="lookup"><div class="grid"><div class="field"><label for="folio">Folio</label><input id="folio" placeholder="CBJ-XXXXXXXXXXXX" required=""/></div><div class="field"><label for="clave">Clave privada</label><input id="clave" required="" type="password"/></div></div><button>Consultar</button></form><div aria-live="polite" id="lookupResult"></div></section></div></main><script src="comprobante-juridico.js"></script><script>
+</div></section><section class="panel hidden" id="consulta"><h2>Consultar expediente privado</h2><p class="muted">Necesitas el folio CBJ-... y la clave privada que se entrega al crear la solicitud. No podremos recuperar tu clave si la pierdes.</p><form id="lookup"><div class="grid"><div class="field"><label for="folio">Folio</label><input id="folio" placeholder="CBJ-XXXXXXXXXXXX" required=""/></div><div class="field"><label for="clave">Clave privada</label><input id="clave" required="" type="password"/></div></div><button>Consultar</button></form><div aria-live="polite" id="lookupResult"></div></section></div></main><script src="../comprobante-juridico.js"></script><script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const endpoint='https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/portal-servicios';
@@ -255,8 +297,7 @@ render();
 })();
 </script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=juridicoTurnstileReady" async defer></script>
 <script>
-/* Modalidad de escrito ciudadano automático: procesa la información localmente,
-   sin crear expedientes ni enviar el formulario al servidor. */
+/* CazaBachesMX - tienda segura: nunca se crea un PDF sin verificación del servidor. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -265,178 +306,80 @@ render();
   const revision = $('cbRevisionArea');
   const form = $('cbEscritoForm');
   const salida = $('cbEscritoResultado');
+  const pagoEstado = $('cbPagoResultado');
+  const pagoAcciones = $('cbPagoAcciones');
   if (!inmediato || !revision || !form || !modos.length) return;
-
-  function elegirModo(modo) {
-    inmediato.classList.toggle('hidden', modo !== 'inmediato');
-    revision.classList.toggle('hidden', modo !== 'revision');
-    modos.forEach(b => {
-      const activa = b.dataset.cbModo === modo;
-      b.classList.toggle('active', activa);
-      b.setAttribute('aria-pressed', String(activa));
-    });
+  const checkoutURL='https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/tienda-escritos';
+  const fecha=$('cbEsFecha');
+  const hoy=new Date();
+  const yyyy=hoy.getFullYear(),mm=String(hoy.getMonth()+1).padStart(2,'0'),dd=String(hoy.getDate()).padStart(2,'0');
+  fecha.max=`${yyyy}-${mm}-${dd}`;
+  let captchaCompra=null,compraEnCurso=false,pedidoActual=null,claveActual=null;
+  function elegirModo(modo){
+    inmediato.classList.toggle('hidden',modo!=='inmediato');
+    revision.classList.toggle('hidden',modo!=='revision');
+    modos.forEach(b=>{const activo=b.dataset.cbModo===modo;b.classList.toggle('active',activo);b.setAttribute('aria-pressed',String(activo));});
   }
-  modos.forEach(b => b.addEventListener('click', () => elegirModo(b.dataset.cbModo)));
+  modos.forEach(b=>b.addEventListener('click',()=>elegirModo(b.dataset.cbModo)));
   elegirModo('inmediato');
-
-  const fecha = $('cbEsFecha');
-  const hoy = new Date();
-  const yyyy = hoy.getFullYear(), mm = String(hoy.getMonth()+1).padStart(2,'0'), dd = String(hoy.getDate()).padStart(2,'0');
-  fecha.max = `${yyyy}-${mm}-${dd}`;
-
-  // PDF 1.4 sin librerías remotas: las cadenas se codifican con WinAnsi (latín occidental).
-  // Se sustituyen signos Unicode que las fuentes estándar no pueden mostrar.
-  function normalizar(valor) {
-    return String(valor || '').replace(/[\u2018\u2019\u02bb]/g,"'")
-      .replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014\u2212]/g,'-')
-      .replace(/[\u2022\u2023\u25cf]/g,'-').replace(/\u00a0/g,' ')
-      .replace(/\t/g,' ').replace(/\r\n?/g,'\n').normalize('NFC')
-      .replace(/[^\u000a\u0020-\u007e\u00a0-\u00ff]/g,'?');
+  const prev=window.juridicoTurnstileReady;
+  function renderCaptcha(){if(false&&captchaCompra===null&&window.turnstile?.render)captchaCompra=window.turnstile.render('#cbEsCaptcha',{sitekey:'0x4AAAAAAFeFVfO7fFUm1cEw',theme:'auto'});}
+  window.juridicoTurnstileReady=()=>{prev?.();renderCaptcha();};
+  renderCaptcha();
+  const mostrar=(m,error=false)=>{salida.className='alert'+(error?'':' success');salida.textContent=m;};
+  function credenciales(pedido){
+    try{return localStorage.getItem('cbmx_escrito_'+pedido)||'';}catch{return '';}
   }
-  function bytes(s) {
-    const a = new Uint8Array(s.length);
-    for (let i=0; i<s.length; i++) a[i] = s.charCodeAt(i) & 255;
-    return a;
-  }
-  function safe(s) { return normalizar(s).replace(/([\\()])/g,'\\$1').replace(/\n/g,' '); }
-  const ancho=595.28, alto=841.89, izquierda=54, derecha=541, limite=derecha-izquierda;
-  const comandos=[];
-  let pagina=[], y=742;
-  function escribir(x,posY,t,size=10,bold=false,color='0.11 0.21 0.23') {
-    pagina.push(`BT /${bold?'F2':'F1'} ${size} Tf ${color} rg 1 0 0 1 ${x.toFixed(2)} ${posY.toFixed(2)} Tm (${safe(t)}) Tj ET`);
-  }
-  function paginaNueva() {
-    if (pagina.length) comandos.push(pagina.join('\n')+'\n');
-    pagina=[]; y=747;
-    pagina.push(`0.06 0.18 0.21 rg 0 ${alto-88} ${ancho} 88 re f`);
-    escribir(izquierda,795,'CazaBachesMX',18,true,'1 1 1');
-    escribir(izquierda,772,'ESCRITO CIUDADANO GENERADO AUTOMÁTICAMENTE',10.5,true,'1 1 1');
-    pagina.push('0.15 0.42 0.36 rg 54 71 487 1 re f');
-    escribir(izquierda,55,'Documento no revisado. No acredita presentación ante ninguna autoridad.',8,false,'0.35 0.42 0.43');
-    y=725;
-  }
-  function medida(txt,size=10) {
-    let suma=0;
-    for (const c of normalizar(txt)) {
-      if (c===' ') suma+=2.75;
-      else if ('ilI.,;:!|\'`'.includes(c)) suma+=2.8;
-      else if ('mwMW@%'.includes(c)) suma+=8.5;
-      else if ('ABCDEFGHJKLMNOPQRSTUVWXYZÁÉÍÓÚÑ'.includes(c)) suma+=7.3;
-      else suma+=5.35;
-    }
-    return suma*size/10;
-  }
-  function partir(texto,size=10) {
-    const lineas=[];
-    for (const bloque of normalizar(texto).split('\n')) {
-      const palabras=bloque.split(/\s+/).filter(Boolean);
-      if(!palabras.length){lineas.push('');continue;}
-      let linea='';
-      for (let palabra of palabras) {
-        while (medida(palabra,size)>limite) {
-          if(linea){lineas.push(linea);linea='';}
-          let n=1;
-          while (n<palabra.length && medida(palabra.slice(0,n+1),size)<=limite) n++;
-          lineas.push(palabra.slice(0,n));palabra=palabra.slice(n);
-        }
-        const candidato=linea?linea+' '+palabra:palabra;
-        if (medida(candidato,size)>limite && linea){lineas.push(linea);linea=palabra;}
-        else linea=candidato;
-      }
-      if(linea)lineas.push(linea);
-    }
-    return lineas;
-  }
-  function asegurar(altura) { if(y-altura<105) paginaNueva(); }
-  function parrafo(texto,{tam=10.5,inter=15,espacio=14,negrita=false}={}) {
-    for (const l of partir(texto,tam)) { asegurar(inter); if(l)escribir(izquierda,y,l,tam,negrita); y-=inter; }
-    y-=espacio;
-  }
-  function titulo(texto) { asegurar(40);escribir(izquierda,y,texto,11.1,true,'0.11 0.38 0.34');y-=23; }
-  function fechaLegible(s) {
-    const [a,m,d]=s.split('-').map(Number);
-    const f=new Date(a,m-1,d);
-    return f.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-  }
-  function generar(datos) {
-    comandos.length=0;pagina=[];paginaNueva();
-    parrafo(`${datos.municipio}, a ${fechaLegible(`${yyyy}-${mm}-${dd}`)}.`,{negrita:true,espacio:19});
-    parrafo(`ASUNTO: Solicitud de atención y orientación respecto de daños relacionados con un bache.`,{negrita:true,espacio:16});
-    parrafo(`A ${datos.autoridad.toUpperCase()}`,{negrita:true,espacio:3});
-    parrafo('P R E S E N T E.',{negrita:true,espacio:21});
-    parrafo(`Quien suscribe, ${datos.nombre}, por mi propio derecho, comparezco respetuosamente para exponer los hechos relacionados con el estado de una vía pública y solicitar la atención que legalmente corresponda.`);
-    titulo('HECHOS');
-    parrafo(`1. El día ${fechaLegible(datos.fecha)} advertí un bache o irregularidad de la superficie vial en ${datos.calle}, colonia o referencia ${datos.colonia}, en ${datos.municipio}.`);
-    parrafo(`2. Según mi descripción de lo ocurrido y de las afectaciones advertidas: ${datos.descripcion}`);
-    if(datos.folio) parrafo(`3. El reporte ciudadano relacionado tiene el folio de referencia ${datos.folio}. Dicho folio no acredita por sí mismo una presentación ante autoridad.`);
-    titulo('PETICIONES');
-    parrafo('PRIMERA. Se reciba el presente escrito y, en su caso, se remita al área competente para su atención.');
-    parrafo('SEGUNDA. Se verifique el estado del punto señalado y se informe sobre las actuaciones de mantenimiento o reparación que legalmente procedan.');
-    parrafo('TERCERA. Se me indique el procedimiento y los requisitos aplicables para solicitar, en su caso, el análisis de los daños manifestados y de una eventual reparación o indemnización, sin prejuzgar la existencia de responsabilidad.');
-    parrafo('CUARTA. Se emita respuesta por escrito y se notifique a través del medio señalado al final del presente documento.');
-    titulo('DATOS PARA NOTIFICACIONES');
-    if(datos.domicilio)parrafo(`Domicilio señalado: ${datos.domicilio}.`,{espacio:5});
-    if(datos.correo)parrafo(`Correo electrónico: ${datos.correo}.`,{espacio:5});
-    if(!datos.correo&&!datos.domicilio)parrafo('Medio para recibir notificaciones: ____________________________________.');
-    y-=17;
-    asegurar(100);
-    parrafo('ATENTAMENTE',{negrita:true,espacio:16});
-    escribir(izquierda,y,'________________________________________',10);y-=22;
-    parrafo(datos.nombre,{negrita:true,espacio:15});
-    parrafo('Firma de la persona solicitante (una vez impreso o firmado por el medio autorizado).',{tam:9,inter:14,espacio:16});
-    titulo('NOTA SOBRE LA GENERACIÓN DEL DOCUMENTO');
-    parrafo('Este escrito se elaboró automáticamente con la información capturada por la persona usuaria. No fue revisado, validado ni firmado por el equipo jurídico de CazaBachesMX. No constituye un oficio emitido por autoridad, un dictamen, un acuse de recibo ni una reclamación oficialmente presentada. La persona solicitante debe verificar la exactitud de los datos, el destinatario, los requisitos y los plazos aplicables antes de usarlo.',{tam:9.4,inter:13.6,espacio:4});
-    if(pagina.length) comandos.push(pagina.join('\n')+'\n');
-    const n=comandos.length;
-    const objetos=[
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      `<< /Type /Pages /Kids [${Array.from({length:n},(_,i)=>`${5+i*2} 0 R`).join(' ')}] /Count ${n} >>`,
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
-    ];
-    comandos.forEach((stream,i)=>{
-      const id=6+i*2;
-      objetos.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${ancho} ${alto}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${id} 0 R >>`);
-      objetos.push(`<< /Length ${bytes(stream).length} >>\nstream\n${stream}endstream`);
-    });
-    const infoId=objetos.length+1;
-    objetos.push('<< /Title (Escrito ciudadano automatico - CazaBachesMX) /Producer (CazaBachesMX) >>');
-    let doc='%PDF-1.4\n%âãÏÓ\n';
-    const offsets=[0];
-    for(let i=0;i<objetos.length;i++){
-      offsets.push(bytes(doc).length);
-      doc+=`${i+1} 0 obj\n${objetos[i]}\nendobj\n`;
-    }
-    const xref=bytes(doc).length;
-    doc+=`xref\n0 ${objetos.length+1}\n0000000000 65535 f \n`;
-    offsets.slice(1).forEach(offset=>{doc+=String(offset).padStart(10,'0')+' 00000 n \n';});
-    doc+=`trailer\n<< /Size ${objetos.length+1} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-    return new Blob([bytes(doc)],{type:'application/pdf'});
-  }
-  form.addEventListener('submit',event=>{
-    event.preventDefault();
-    if(!form.reportValidity())return;
-    const value=id=>$(id).value.trim();
-    if(value('cbEsNombre').length<4){$('cbEsNombre').setCustomValidity('Escribe tu nombre completo.');$('cbEsNombre').reportValidity();return;}
-    if(value('cbEsDescripcion').length<20){$('cbEsDescripcion').setCustomValidity('Describe los hechos y daños con al menos 20 caracteres.');$('cbEsDescripcion').reportValidity();return;}
-    if(value('cbEsFecha')>`${yyyy}-${mm}-${dd}`){fecha.setCustomValidity('La fecha del incidente no puede ser futura.');fecha.reportValidity();return;}
-    const datos={nombre:value('cbEsNombre'),domicilio:value('cbEsDomicilio'),correo:value('cbEsCorreo'),
-      autoridad:value('cbEsAutoridad'),municipio:value('cbEsMunicipio'),fecha:value('cbEsFecha'),
-      calle:value('cbEsCalle'),colonia:value('cbEsColonia'),descripcion:value('cbEsDescripcion'),folio:value('cbEsFolio')};
+  async function consultarPago(){
+    if(!pedidoActual||!claveActual)return;
+    pagoEstado.className='alert';pagoEstado.textContent='Comprobando el pago con Mercado Pago...';
     try{
-      const pdf=generar(datos),url=URL.createObjectURL(pdf);
-      const a=document.createElement('a');a.href=url;
-      a.download=`CazaBachesMX_Escrito_${yyyy}${mm}${dd}.pdf`;
-      document.body.append(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),60000);
-      salida.className='alert success';
-      salida.textContent='El PDF se generó localmente. Si tu navegador bloqueó la descarga, habilita las descargas para este sitio y vuelve a pulsar el botón. No se abrió ningún expediente ni se transmitieron estos datos al equipo jurídico.';
-    }catch(err){salida.className='alert';salida.textContent='No fue posible generar el PDF: '+(err.message||'Error desconocido');}
+      const params=new URLSearchParams(location.search);
+      const res=await fetch(checkoutURL,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({accion:'estado',pedido:pedidoActual,clave:claveActual,payment_id:params.get('payment_id')||params.get('collection_id')||''})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error||'No se pudo confirmar la compra.');
+      $('cbDescargarPago').classList.toggle('hidden',data.estado!=='aprobado');
+      pagoEstado.className='alert'+(data.estado==='aprobado'?' success':'');
+      pagoEstado.textContent=data.estado==='aprobado'?'Pago de $50.00 MXN confirmado. Ya puedes descargar tu reclamación.':data.estado==='pendiente'?'Tu pago sigue pendiente o no ha sido registrado. Puedes volver a consultar después.':'El pago no fue aprobado. No se habilitará la descarga.';
+    }catch(e){pagoEstado.textContent=e.message||'Error al consultar el pago.';}
+  }
+  $('cbConsultarPago').onclick=consultarPago;
+  $('cbDescargarPago').onclick=async()=>{
+    if(!pedidoActual||!claveActual)return;
+    const b=$('cbDescargarPago');b.disabled=true;
+    try{
+      const response=await fetch(checkoutURL,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({accion:'descargar',pedido:pedidoActual,clave:claveActual})});
+      if(!response.ok){const j=await response.json().catch(()=>({}));throw Error(j.error||'Aún no se ha confirmado el pago.');}
+      if(!(response.headers.get('Content-Type')||'').includes('application/pdf'))throw Error('Respuesta de descarga inválida.');
+      const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');
+      a.href=url;a.download='CazaBachesMX_Reclamacion_Patrimonial_'+pedidoActual.slice(0,8)+'.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }catch(e){pagoEstado.textContent=e.message||'No se pudo descargar el PDF.';}finally{b.disabled=false;}
+  };
+  const query=new URLSearchParams(location.search);
+  const id=query.get('compra');
+  if(id&&/^[0-9a-f-]{36}$/i.test(id)){
+    pedidoActual=id;claveActual=credenciales(id);
+    pagoAcciones.classList.remove('hidden');
+    if(!claveActual){pagoEstado.className='alert';pagoEstado.textContent='No se encontró la clave de esta compra en este navegador. Regresa desde el mismo navegador donde iniciaste el pago. Contacta a soporte con tu comprobante si cambiaste de equipo.';}
+    else consultarPago();
+  }
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();if(compraEnCurso||!form.reportValidity())return;
+    const value=id=>$(id).value.trim();
+    if(value('cbEsNombre').length<4||value('cbEsDescripcion').length<30||value('cbEsCausalidad').length<20||value('cbEsDetallePruebas').length<12)return mostrar('Completa los campos narrativos con la información requerida.',true);
+    if(value('cbEsFecha')>fecha.max)return mostrar('La fecha del incidente no puede ser futura.',true);
+    const token='private-preview-local-token';
+    if(!token)return mostrar('Completa la verificación de seguridad antes de pagar.',true);
+    const datos={nombre:value('cbEsNombre'),correo:value('cbEsCorreo'),domicilio:value('cbEsDomicilio'),municipio:value('cbEsMunicipio'),autoridad:value('cbEsAutoridad'),fecha:value('cbEsFecha'),hora:value('cbEsHora'),calle:value('cbEsCalle'),colonia:value('cbEsColonia'),folio:value('cbEsFolio'),bien:value('cbEsBien'),monto:Number(value('cbEsMonto')),evidencias:value('cbEsEvidencias'),descripcion:value('cbEsDescripcion'),causalidad:value('cbEsCausalidad'),detalle_pruebas:value('cbEsDetallePruebas')};
+    const btn=form.querySelector('button[type="submit"]');compraEnCurso=true;btn.disabled=true;mostrar('Preparando la compra segura por $50.00 MXN...');
+    try{
+      const response=await fetch(checkoutURL,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({accion:'crear',datos,turnstile_token:token})});
+      const j=await response.json().catch(()=>({}));if(!response.ok)throw Error(j.error||'No fue posible iniciar el pago.');
+      if(!/^[0-9a-f-]{36}$/i.test(j.pedido)||!j.clave||!j.checkout_url.startsWith(location.protocol+'//'))throw Error('Respuesta incompleta de la tienda.');
+      try{localStorage.setItem('cbmx_escrito_'+j.pedido,j.clave);localStorage.setItem('cbmx_escrito_ultimo',j.pedido);}catch{throw Error('El navegador impide guardar la clave de compra. Habilita el almacenamiento y vuelve a intentarlo. No se ha realizado ningún cargo.');}
+      location.assign(j.checkout_url);
+    }catch(err){mostrar(err.message||'No se completó la solicitud de pago.',true);window.turnstile?.reset?.(captchaCompra);}finally{compraEnCurso=false;btn.disabled=false;}
   });
-  form.querySelectorAll('input,textarea').forEach(el=>{
-    el.addEventListener('input',()=>el.setCustomValidity(''));
-    el.addEventListener('change',()=>el.setCustomValidity(''));
-  });
+  form.querySelectorAll('input,textarea,select').forEach(el=>{el.addEventListener('input',()=>el.setCustomValidity(''));el.addEventListener('change',()=>el.setCustomValidity(''));});
 })();
-
 </script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
