@@ -16,7 +16,54 @@
 #pdfControls button{background:#103b43;color:#fff}
 #pdfStatus{margin:10px 0 0;white-space:pre-wrap}
 .file-list{overflow-wrap:anywhere;margin:6px 0 0}
-</style></head><body><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>¿Sufriste daños por un bache?</h1><p>Solicita una revisión jurídica inicial gratuita. Describe el incidente, adjunta evidencias y recibe un folio para dar seguimiento privado a tu solicitud.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂  Inicio</a><a href="reportar.html">＋  Reportar bache</a><a aria-current="page" href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><div class="alert"><strong>Solicitud privada:</strong> este formulario permite registrar incidencias y adjuntar documentos para orientación jurídica. <strong>El registro no constituye una reclamación ante ninguna autoridad ni suspende plazos.</strong> Antes de proporcionar datos reales, consulta el <a href="aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a> y comprueba que sus datos de responsable y contacto estén completos.</div><nav class="tabs"><button class="active" data-tab="solicitud">Nueva solicitud</button><button data-tab="consulta">Consultar expediente</button></nav><section class="panel" id="solicitud"><h2>Solicitud de orientación jurídica</h2><div class="step" id="stepLabel">Paso 1 de 3 · Datos de contacto</div><form id="caseForm"><div id="step1"><div class="grid"><div class="field"><label for="nombre">Nombre completo *</label><input autocomplete="name" id="nombre" maxlength="120" required=""/></div><div class="field"><label for="telefono">Teléfono *</label><input autocomplete="tel" id="telefono" maxlength="20" required="" type="tel"/></div><div class="field"><label for="correo">Correo electrónico *</label><input autocomplete="email" id="correo" required="" type="email"/></div><div class="field"><label for="medio">Medio de contacto preferido *</label><select id="medio" required=""><option value="">Seleccionar</option><option>Teléfono</option><option>Correo electrónico</option><option>WhatsApp</option></select></div></div><p class="hint">Los datos de contacto se almacenan en una tabla privada; el acceso del equipo requiere autenticación.</p></div><div class="hidden" id="step2"><div class="grid"><div class="field"><label for="fecha">Fecha del incidente *</label><input id="fecha" required="" type="date"/></div><div class="field"><label for="hora">Hora aproximada</label><input id="hora" type="time"/></div><div class="field"><label for="calle">Calle o avenida *</label><input id="calle" maxlength="150" required=""/></div><div class="field"><label for="colonia">Colonia o referencia *</label><input id="colonia" maxlength="150" required=""/></div></div><div class="field"><label for="tipo">Tipo de afectación *</label><select id="tipo" required=""><option value="">Seleccionar</option><option>Neumático o rin</option><option>Suspensión</option><option>Carrocería</option><option>Otros daños materiales</option><option>Lesiones personales</option><option>Varias afectaciones</option></select></div><div class="field"><label for="descripcion">¿Qué ocurrió y qué daños sufriste? *</label><textarea id="descripcion" maxlength="4000" placeholder="Describe los hechos sin incluir datos médicos innecesarios" required=""></textarea></div><div class="field"><label for="bache">Folio de bache existente (opcional)</label><input id="bache" placeholder="Ej. CBMX-E280BF2EBCAB"/></div></div><div class="hidden" id="step3">
+
+/* Dos modalidades de orientación jurídica, sin cambiar el diseño general. */
+.cb-modo-caption{display:block;font-size:12px;font-weight:500;opacity:.88;margin-top:4px}
+.cb-modo-tabs{margin-bottom:18px}
+.cb-modo-tabs button{flex:1;min-width:220px;text-align:left;line-height:1.4}
+.cb-modo-tabs button.active .cb-modo-caption{color:#eef8f4}
+.cb-escrito-aviso{background:#edf7f3;border-color:#b7d7ce}
+.cb-escrito-footer{padding:14px;border:1px solid #dce8e4;border-radius:10px;background:#f6faf7}
+.cb-escrito-footer .check{margin-bottom:0}
+.cb-escrito-form label{font-weight:650}
+@media(max-width:640px){.cb-modo-tabs{display:grid;grid-template-columns:1fr}.cb-modo-tabs button{min-width:0}}
+</style></head><body><header class="cb-header"><a class="cb-brand" href="index.html"><span class="brand-icon">⌖</span><span>CazaBachesMX<small>Tu ciudad, en el mapa</small></span></a></header><main><div class="page-intro"><h1>¿Sufriste daños por un bache?</h1><p>Elige entre descargar un escrito generado inmediatamente con tus datos o solicitar la revisión gratuita de tu caso por nuestro equipo jurídico.</p></div><nav aria-label="Navegación principal" class="cb-nav"><a href="index.html">⌂  Inicio</a><a href="reportar.html">＋  Reportar bache</a><a aria-current="page" href="juridico.html">⚖  Orientación jurídica</a><a href="seguimiento.html">◷  Seguimiento</a></nav><div class="alert"><strong>Dos opciones:</strong> la descarga inmediata produce un escrito automático sin revisión ni registro de expediente; la revisión por el equipo jurídico permite enviar una solicitud privada y darle seguimiento. <strong>Ninguna opción presenta por sí misma una reclamación ante una autoridad ni suspende plazos legales.</strong> Consulta el <a href="aviso-privacidad.html" target="_blank" rel="noopener noreferrer">aviso de privacidad</a>.</div><nav class="tabs cb-modo-tabs" aria-label="Modalidad de orientación jurídica">
+  <button class="active" type="button" data-cb-modo="inmediato" aria-pressed="true">
+    Descarga inmediata <span class="cb-modo-caption">Escrito PDF generado con tus respuestas</span>
+  </button>
+  <button type="button" data-cb-modo="revision" aria-pressed="false">
+    Revisión por el equipo jurídico <span class="cb-modo-caption">Envía tu solicitud y da seguimiento privado</span>
+  </button>
+</nav>
+<section class="panel" id="cbEscritoInmediato" aria-label="Descarga inmediata de escrito">
+  <h2>Genera tu escrito en PDF</h2>
+  <div class="alert cb-escrito-aviso"><strong>Documento generado automáticamente:</strong> el contenido se construye exclusivamente con la información que ingreses. <strong>No fue revisado, firmado ni validado por el equipo jurídico de CazaBachesMX.</strong> No es un oficio expedido por una autoridad, no acredita su presentación y no interrumpe plazos legales. Debes verificar los datos y presentar el documento ante la autoridad competente si decides utilizarlo.</div>
+  <p class="hint">Este formulario se procesa en tu navegador: <strong>los datos que escribas aquí no se envían a CazaBachesMX ni crean un expediente</strong>. Si necesitas que el equipo jurídico revise las evidencias, utiliza la otra modalidad. El PDF no incluye fotografías; podrás adjuntar las pruebas pertinentes cuando presentes el escrito.</p>
+  <form id="cbEscritoForm" class="cb-escrito-form">
+    <div class="grid">
+      <div class="field"><label for="cbEsNombre">Nombre completo *</label><input id="cbEsNombre" autocomplete="name" maxlength="120" minlength="4" required></div>
+      <div class="field"><label for="cbEsCorreo">Correo para recibir notificaciones (opcional)</label><input id="cbEsCorreo" type="email" autocomplete="email" maxlength="150"></div>
+      <div class="field"><label for="cbEsDomicilio">Domicilio para notificaciones (opcional)</label><input id="cbEsDomicilio" maxlength="220" placeholder="Calle, número, colonia y municipio"></div>
+      <div class="field"><label for="cbEsMunicipio">Municipio y estado *</label><input id="cbEsMunicipio" maxlength="120" value="Xalapa, Veracruz" required></div>
+    </div>
+    <div class="field"><label for="cbEsAutoridad">Autoridad a la que dirigirás el escrito *</label><input id="cbEsAutoridad" maxlength="180" value="Autoridad municipal competente" required><p class="hint">Verifica el nombre exacto del destinatario antes de presentar el documento.</p></div>
+    <h3>Información del incidente</h3>
+    <div class="grid">
+      <div class="field"><label for="cbEsFecha">Fecha del incidente *</label><input id="cbEsFecha" type="date" required></div>
+      <div class="field"><label for="cbEsFolio">Folio del bache (opcional)</label><input id="cbEsFolio" maxlength="40" placeholder="CBMX-..."></div>
+      <div class="field"><label for="cbEsCalle">Calle o avenida *</label><input id="cbEsCalle" maxlength="150" required></div>
+      <div class="field"><label for="cbEsColonia">Colonia o referencia *</label><input id="cbEsColonia" maxlength="150" required></div>
+    </div>
+    <div class="field"><label for="cbEsDescripcion">Describe lo ocurrido y los daños materiales *</label><textarea id="cbEsDescripcion" minlength="20" maxlength="4000" placeholder="Explica qué ocurrió, dónde estaba el bache y qué daños materiales observaste. No incluyas datos médicos ni información de terceros." required></textarea></div>
+    <div class="cb-escrito-footer">
+      <label class="check"><input id="cbEsAcepta" type="checkbox" required><span>Entiendo que el escrito es una <strong>versión generada automáticamente a partir de mis respuestas</strong>, sin revisión jurídica, firma ni presentación ante autoridad. Revisaré su contenido antes de utilizarlo.</span></label>
+    </div>
+    <div class="actions"><button type="submit">Descargar escrito PDF</button></div>
+    <div id="cbEscritoResultado" role="status" aria-live="polite" class="hidden"></div>
+  </form>
+</section>
+<div id="cbRevisionArea" class="hidden">
+<nav class="tabs"><button class="active" data-tab="solicitud">Nueva solicitud</button><button data-tab="consulta">Consultar expediente</button></nav><section class="panel" id="solicitud"><h2>Solicitud de orientación jurídica</h2><div class="step" id="stepLabel">Paso 1 de 3 · Datos de contacto</div><form id="caseForm"><div id="step1"><div class="grid"><div class="field"><label for="nombre">Nombre completo *</label><input autocomplete="name" id="nombre" maxlength="120" required=""/></div><div class="field"><label for="telefono">Teléfono *</label><input autocomplete="tel" id="telefono" maxlength="20" required="" type="tel"/></div><div class="field"><label for="correo">Correo electrónico *</label><input autocomplete="email" id="correo" required="" type="email"/></div><div class="field"><label for="medio">Medio de contacto preferido *</label><select id="medio" required=""><option value="">Seleccionar</option><option>Teléfono</option><option>Correo electrónico</option><option>WhatsApp</option></select></div></div><p class="hint">Los datos de contacto se almacenan en una tabla privada; el acceso del equipo requiere autenticación.</p></div><div class="hidden" id="step2"><div class="grid"><div class="field"><label for="fecha">Fecha del incidente *</label><input id="fecha" required="" type="date"/></div><div class="field"><label for="hora">Hora aproximada</label><input id="hora" type="time"/></div><div class="field"><label for="calle">Calle o avenida *</label><input id="calle" maxlength="150" required=""/></div><div class="field"><label for="colonia">Colonia o referencia *</label><input id="colonia" maxlength="150" required=""/></div></div><div class="field"><label for="tipo">Tipo de afectación *</label><select id="tipo" required=""><option value="">Seleccionar</option><option>Neumático o rin</option><option>Suspensión</option><option>Carrocería</option><option>Otros daños materiales</option><option>Lesiones personales</option><option>Varias afectaciones</option></select></div><div class="field"><label for="descripcion">¿Qué ocurrió y qué daños sufriste? *</label><textarea id="descripcion" maxlength="4000" placeholder="Describe los hechos sin incluir datos médicos innecesarios" required=""></textarea></div><div class="field"><label for="bache">Folio de bache existente (opcional)</label><input id="bache" placeholder="Ej. CBMX-E280BF2EBCAB"/></div></div><div class="hidden" id="step3">
   <p class="hint">Adjunta imágenes actuales y relacionadas con el mismo incidente. <strong>Las tres categorías fotográficas son obligatorias.</strong> Evita rostros, placas, identificaciones y datos sensibles de terceros.</p>
   <div class="field"><label for="fotoBache">1. Fotografías del bache * (de 1 a 3)</label>
     <input accept="image/jpeg,image/png,image/webp" id="fotoBache" type="file" multiple required>
@@ -45,7 +92,7 @@
   <button id="downloadPdf" type="button">Descargar nuevamente el comprobante PDF</button>
   <p id="pdfStatus" class="hint" role="status" aria-live="polite"></p>
   <p class="hint">El PDF contiene tu folio y clave privada. No lo compartas y guárdalo en un dispositivo seguro.</p>
-</div></section><section class="panel hidden" id="consulta"><h2>Consultar expediente privado</h2><p class="muted">Necesitas el folio CBJ-... y la clave privada que se entrega al crear la solicitud. No podremos recuperar tu clave si la pierdes.</p><form id="lookup"><div class="grid"><div class="field"><label for="folio">Folio</label><input id="folio" placeholder="CBJ-XXXXXXXXXXXX" required=""/></div><div class="field"><label for="clave">Clave privada</label><input id="clave" required="" type="password"/></div></div><button>Consultar</button></form><div aria-live="polite" id="lookupResult"></div></section></main><script src="comprobante-juridico.js"></script><script>
+</div></section><section class="panel hidden" id="consulta"><h2>Consultar expediente privado</h2><p class="muted">Necesitas el folio CBJ-... y la clave privada que se entrega al crear la solicitud. No podremos recuperar tu clave si la pierdes.</p><form id="lookup"><div class="grid"><div class="field"><label for="folio">Folio</label><input id="folio" placeholder="CBJ-XXXXXXXXXXXX" required=""/></div><div class="field"><label for="clave">Clave privada</label><input id="clave" required="" type="password"/></div></div><button>Consultar</button></form><div aria-live="polite" id="lookupResult"></div></section></div></main><script src="comprobante-juridico.js"></script><script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const endpoint='https://joyfxdjdzjcfbcgjnjsn.supabase.co/functions/v1/portal-servicios';
@@ -206,4 +253,190 @@ $('lookup').addEventListener('submit',async e=>{
 });
 render();
 })();
-</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=juridicoTurnstileReady" async defer></script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
+</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=juridicoTurnstileReady" async defer></script>
+<script>
+/* Modalidad de escrito ciudadano automático: procesa la información localmente,
+   sin crear expedientes ni enviar el formulario al servidor. */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const modos = document.querySelectorAll('[data-cb-modo]');
+  const inmediato = $('cbEscritoInmediato');
+  const revision = $('cbRevisionArea');
+  const form = $('cbEscritoForm');
+  const salida = $('cbEscritoResultado');
+  if (!inmediato || !revision || !form || !modos.length) return;
+
+  function elegirModo(modo) {
+    inmediato.classList.toggle('hidden', modo !== 'inmediato');
+    revision.classList.toggle('hidden', modo !== 'revision');
+    modos.forEach(b => {
+      const activa = b.dataset.cbModo === modo;
+      b.classList.toggle('active', activa);
+      b.setAttribute('aria-pressed', String(activa));
+    });
+  }
+  modos.forEach(b => b.addEventListener('click', () => elegirModo(b.dataset.cbModo)));
+  elegirModo('inmediato');
+
+  const fecha = $('cbEsFecha');
+  const hoy = new Date();
+  const yyyy = hoy.getFullYear(), mm = String(hoy.getMonth()+1).padStart(2,'0'), dd = String(hoy.getDate()).padStart(2,'0');
+  fecha.max = `${yyyy}-${mm}-${dd}`;
+
+  // PDF 1.4 sin librerías remotas: las cadenas se codifican con WinAnsi (latín occidental).
+  // Se sustituyen signos Unicode que las fuentes estándar no pueden mostrar.
+  function normalizar(valor) {
+    return String(valor || '').replace(/[\u2018\u2019\u02bb]/g,"'")
+      .replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014\u2212]/g,'-')
+      .replace(/[\u2022\u2023\u25cf]/g,'-').replace(/\u00a0/g,' ')
+      .replace(/\t/g,' ').replace(/\r\n?/g,'\n').normalize('NFC')
+      .replace(/[^\u000a\u0020-\u007e\u00a0-\u00ff]/g,'?');
+  }
+  function bytes(s) {
+    const a = new Uint8Array(s.length);
+    for (let i=0; i<s.length; i++) a[i] = s.charCodeAt(i) & 255;
+    return a;
+  }
+  function safe(s) { return normalizar(s).replace(/([\\()])/g,'\\$1').replace(/\n/g,' '); }
+  const ancho=595.28, alto=841.89, izquierda=54, derecha=541, limite=derecha-izquierda;
+  const comandos=[];
+  let pagina=[], y=742;
+  function escribir(x,posY,t,size=10,bold=false,color='0.11 0.21 0.23') {
+    pagina.push(`BT /${bold?'F2':'F1'} ${size} Tf ${color} rg 1 0 0 1 ${x.toFixed(2)} ${posY.toFixed(2)} Tm (${safe(t)}) Tj ET`);
+  }
+  function paginaNueva() {
+    if (pagina.length) comandos.push(pagina.join('\n')+'\n');
+    pagina=[]; y=747;
+    pagina.push(`0.06 0.18 0.21 rg 0 ${alto-88} ${ancho} 88 re f`);
+    escribir(izquierda,795,'CazaBachesMX',18,true,'1 1 1');
+    escribir(izquierda,772,'ESCRITO CIUDADANO GENERADO AUTOMÁTICAMENTE',10.5,true,'1 1 1');
+    pagina.push('0.15 0.42 0.36 rg 54 71 487 1 re f');
+    escribir(izquierda,55,'Documento no revisado. No acredita presentación ante ninguna autoridad.',8,false,'0.35 0.42 0.43');
+    y=725;
+  }
+  function medida(txt,size=10) {
+    let suma=0;
+    for (const c of normalizar(txt)) {
+      if (c===' ') suma+=2.75;
+      else if ('ilI.,;:!|\'`'.includes(c)) suma+=2.8;
+      else if ('mwMW@%'.includes(c)) suma+=8.5;
+      else if ('ABCDEFGHJKLMNOPQRSTUVWXYZÁÉÍÓÚÑ'.includes(c)) suma+=7.3;
+      else suma+=5.35;
+    }
+    return suma*size/10;
+  }
+  function partir(texto,size=10) {
+    const lineas=[];
+    for (const bloque of normalizar(texto).split('\n')) {
+      const palabras=bloque.split(/\s+/).filter(Boolean);
+      if(!palabras.length){lineas.push('');continue;}
+      let linea='';
+      for (let palabra of palabras) {
+        while (medida(palabra,size)>limite) {
+          if(linea){lineas.push(linea);linea='';}
+          let n=1;
+          while (n<palabra.length && medida(palabra.slice(0,n+1),size)<=limite) n++;
+          lineas.push(palabra.slice(0,n));palabra=palabra.slice(n);
+        }
+        const candidato=linea?linea+' '+palabra:palabra;
+        if (medida(candidato,size)>limite && linea){lineas.push(linea);linea=palabra;}
+        else linea=candidato;
+      }
+      if(linea)lineas.push(linea);
+    }
+    return lineas;
+  }
+  function asegurar(altura) { if(y-altura<105) paginaNueva(); }
+  function parrafo(texto,{tam=10.5,inter=15,espacio=14,negrita=false}={}) {
+    for (const l of partir(texto,tam)) { asegurar(inter); if(l)escribir(izquierda,y,l,tam,negrita); y-=inter; }
+    y-=espacio;
+  }
+  function titulo(texto) { asegurar(40);escribir(izquierda,y,texto,11.1,true,'0.11 0.38 0.34');y-=23; }
+  function fechaLegible(s) {
+    const [a,m,d]=s.split('-').map(Number);
+    const f=new Date(a,m-1,d);
+    return f.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  }
+  function generar(datos) {
+    comandos.length=0;pagina=[];paginaNueva();
+    parrafo(`${datos.municipio}, a ${fechaLegible(`${yyyy}-${mm}-${dd}`)}.`,{negrita:true,espacio:19});
+    parrafo(`ASUNTO: Solicitud de atención y orientación respecto de daños relacionados con un bache.`,{negrita:true,espacio:16});
+    parrafo(`A ${datos.autoridad.toUpperCase()}`,{negrita:true,espacio:3});
+    parrafo('P R E S E N T E.',{negrita:true,espacio:21});
+    parrafo(`Quien suscribe, ${datos.nombre}, por mi propio derecho, comparezco respetuosamente para exponer los hechos relacionados con el estado de una vía pública y solicitar la atención que legalmente corresponda.`);
+    titulo('HECHOS');
+    parrafo(`1. El día ${fechaLegible(datos.fecha)} advertí un bache o irregularidad de la superficie vial en ${datos.calle}, colonia o referencia ${datos.colonia}, en ${datos.municipio}.`);
+    parrafo(`2. Según mi descripción de lo ocurrido y de las afectaciones advertidas: ${datos.descripcion}`);
+    if(datos.folio) parrafo(`3. El reporte ciudadano relacionado tiene el folio de referencia ${datos.folio}. Dicho folio no acredita por sí mismo una presentación ante autoridad.`);
+    titulo('PETICIONES');
+    parrafo('PRIMERA. Se reciba el presente escrito y, en su caso, se remita al área competente para su atención.');
+    parrafo('SEGUNDA. Se verifique el estado del punto señalado y se informe sobre las actuaciones de mantenimiento o reparación que legalmente procedan.');
+    parrafo('TERCERA. Se me indique el procedimiento y los requisitos aplicables para solicitar, en su caso, el análisis de los daños manifestados y de una eventual reparación o indemnización, sin prejuzgar la existencia de responsabilidad.');
+    parrafo('CUARTA. Se emita respuesta por escrito y se notifique a través del medio señalado al final del presente documento.');
+    titulo('DATOS PARA NOTIFICACIONES');
+    if(datos.domicilio)parrafo(`Domicilio señalado: ${datos.domicilio}.`,{espacio:5});
+    if(datos.correo)parrafo(`Correo electrónico: ${datos.correo}.`,{espacio:5});
+    if(!datos.correo&&!datos.domicilio)parrafo('Medio para recibir notificaciones: ____________________________________.');
+    y-=17;
+    asegurar(100);
+    parrafo('ATENTAMENTE',{negrita:true,espacio:16});
+    escribir(izquierda,y,'________________________________________',10);y-=22;
+    parrafo(datos.nombre,{negrita:true,espacio:15});
+    parrafo('Firma de la persona solicitante (una vez impreso o firmado por el medio autorizado).',{tam:9,inter:14,espacio:16});
+    titulo('NOTA SOBRE LA GENERACIÓN DEL DOCUMENTO');
+    parrafo('Este escrito se elaboró automáticamente con la información capturada por la persona usuaria. No fue revisado, validado ni firmado por el equipo jurídico de CazaBachesMX. No constituye un oficio emitido por autoridad, un dictamen, un acuse de recibo ni una reclamación oficialmente presentada. La persona solicitante debe verificar la exactitud de los datos, el destinatario, los requisitos y los plazos aplicables antes de usarlo.',{tam:9.4,inter:13.6,espacio:4});
+    if(pagina.length) comandos.push(pagina.join('\n')+'\n');
+    const n=comandos.length;
+    const objetos=[
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      `<< /Type /Pages /Kids [${Array.from({length:n},(_,i)=>`${5+i*2} 0 R`).join(' ')}] /Count ${n} >>`,
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
+    ];
+    comandos.forEach((stream,i)=>{
+      const id=6+i*2;
+      objetos.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${ancho} ${alto}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${id} 0 R >>`);
+      objetos.push(`<< /Length ${bytes(stream).length} >>\nstream\n${stream}endstream`);
+    });
+    const infoId=objetos.length+1;
+    objetos.push('<< /Title (Escrito ciudadano automatico - CazaBachesMX) /Producer (CazaBachesMX) >>');
+    let doc='%PDF-1.4\n%âãÏÓ\n';
+    const offsets=[0];
+    for(let i=0;i<objetos.length;i++){
+      offsets.push(bytes(doc).length);
+      doc+=`${i+1} 0 obj\n${objetos[i]}\nendobj\n`;
+    }
+    const xref=bytes(doc).length;
+    doc+=`xref\n0 ${objetos.length+1}\n0000000000 65535 f \n`;
+    offsets.slice(1).forEach(offset=>{doc+=String(offset).padStart(10,'0')+' 00000 n \n';});
+    doc+=`trailer\n<< /Size ${objetos.length+1} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    return new Blob([bytes(doc)],{type:'application/pdf'});
+  }
+  form.addEventListener('submit',event=>{
+    event.preventDefault();
+    if(!form.reportValidity())return;
+    const value=id=>$(id).value.trim();
+    if(value('cbEsNombre').length<4){$('cbEsNombre').setCustomValidity('Escribe tu nombre completo.');$('cbEsNombre').reportValidity();return;}
+    if(value('cbEsDescripcion').length<20){$('cbEsDescripcion').setCustomValidity('Describe los hechos y daños con al menos 20 caracteres.');$('cbEsDescripcion').reportValidity();return;}
+    if(value('cbEsFecha')>`${yyyy}-${mm}-${dd}`){fecha.setCustomValidity('La fecha del incidente no puede ser futura.');fecha.reportValidity();return;}
+    const datos={nombre:value('cbEsNombre'),domicilio:value('cbEsDomicilio'),correo:value('cbEsCorreo'),
+      autoridad:value('cbEsAutoridad'),municipio:value('cbEsMunicipio'),fecha:value('cbEsFecha'),
+      calle:value('cbEsCalle'),colonia:value('cbEsColonia'),descripcion:value('cbEsDescripcion'),folio:value('cbEsFolio')};
+    try{
+      const pdf=generar(datos),url=URL.createObjectURL(pdf);
+      const a=document.createElement('a');a.href=url;
+      a.download=`CazaBachesMX_Escrito_${yyyy}${mm}${dd}.pdf`;
+      document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      salida.className='alert success';
+      salida.textContent='El PDF se generó localmente. Si tu navegador bloqueó la descarga, habilita las descargas para este sitio y vuelve a pulsar el botón. No se abrió ningún expediente ni se transmitieron estos datos al equipo jurídico.';
+    }catch(err){salida.className='alert';salida.textContent='No fue posible generar el PDF: '+(err.message||'Error desconocido');}
+  });
+  form.querySelectorAll('input,textarea').forEach(el=>{
+    el.addEventListener('input',()=>el.setCustomValidity(''));
+    el.addEventListener('change',()=>el.setCustomValidity(''));
+  });
+})();
+
+</script><footer class="site-footer"><span>© CazaBachesMX · Iniciativa ciudadana independiente</span><span>Xalapa, Veracruz</span></footer></body></html>
